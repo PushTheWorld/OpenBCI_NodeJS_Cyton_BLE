@@ -8,7 +8,6 @@ const OpenBCIUtilities = require('openbci-utilities');
 const obciUtils = OpenBCIUtilities.Utilities;
 const k = OpenBCIUtilities.Constants;
 const obciDebug = OpenBCIUtilities.Debug;
-const OpenBCISimulator = OpenBCIUtilities.Simulator;
 const clone = require('clone');
 
 /**
@@ -18,30 +17,11 @@ const clone = require('clone');
  * @property {Boolean} nobleAutoStart Automatically initialize `noble`. Subscribes to blue tooth state changes and such.
  *           (Default `true`)
  *
- * @property {Boolean} nobleScanOnPowerOn Start scanning for Ganglion BLE devices as soon as power turns on.
+ * @property {Boolean} nobleScanOnPowerOn Start scanning for CytonBLE BLE devices as soon as power turns on.
  *           (Default `true`)
  *
  * @property {Boolean} sendCounts Send integer raw counts instead of scaled floats.
  *           (Default `false`)
- *
- * @property {Boolean} simulate (IN-OP) Full functionality, just mock data. (Default `false`)
- *
- * @property {Boolean} simulatorBoardFailure (IN-OP)  Simulates board communications failure. This occurs when the RFduino on
- *                  the board is not polling the RFduino on the dongle. (Default `false`)
- *
- * @property {Boolean} simulatorHasAccelerometer Sets simulator to send packets with accelerometer data. (Default `true`)
- *
- * @property {Boolean} simulatorInjectAlpha Inject a 10Hz alpha wave in Channels 1 and 2 (Default `true`)
- *
- * @property {String} simulatorInjectLineNoise Injects line noise on channels.
- *          3 Possible Options:
- *              `60Hz` - 60Hz line noise (Default) [America]
- *              `50Hz` - 50Hz line noise [Europe]
- *              `none` - Do not inject line noise.
- *
- * @property {Number} simulatorSampleRate The sample rate to use for the simulator. Simulator will set to 125 if
- *                  `simulatorDaisyModuleAttached` is set `true`. However, setting this option overrides that
- *                  setting and this sample rate will be used. (Default is `250`)
  *
  * @property {Boolean} - Print out useful debugging events. (Default `false`)
  */
@@ -56,27 +36,20 @@ const _options = {
   nobleAutoStart: true,
   nobleScanOnPowerOn: true,
   sendCounts: false,
-  simulate: false,
-  simulatorBoardFailure: false,
-  simulatorHasAccelerometer: true,
-  simulatorInternalClockDrift: 0,
-  simulatorInjectAlpha: true,
-  simulatorInjectLineNoise: [k.OBCISimulatorLineNoiseHz60, k.OBCISimulatorLineNoiseHz50, k.OBCISimulatorLineNoiseNone],
-  simulatorSampleRate: 200,
   verbose: false
 };
 
 /**
  * @description The initialization method to call first, before any other method.
- * @param options {IntializationObject} (optional) - Board optional configurations.
+ * @param options {InitializationObject} (optional) - Board optional configurations.
  * @param callback {function} (optional) - A callback function used to determine if the noble module was able to be started.
  *    This can be very useful on Windows when there is no compatible BLE device found.
  * @constructor
  * @author AJ Keller (@pushtheworldllc)
  */
-function Ganglion (options, callback) {
-  if (!(this instanceof Ganglion)) {
-    return new Ganglion(options, callback);
+function CytonBLE (options, callback) {
+  if (!(this instanceof CytonBLE)) {
+    return new CytonBLE(options, callback);
   }
 
   if (options instanceof Function) {
@@ -90,8 +63,8 @@ function Ganglion (options, callback) {
   /** Configuring Options */
   let o;
   for (o in _options) {
-    var userOption = (o in options) ? o : o.toLowerCase();
-    var userValue = options[userOption];
+    let userOption = (o in options) ? o : o.toLowerCase();
+    let userValue = options[userOption];
     delete options[userOption];
 
     if (typeof _options[o] === 'object') {
@@ -125,16 +98,10 @@ function Ganglion (options, callback) {
   /** Private Properties (keep alphabetical) */
   this._accelArray = [0, 0, 0];
   this._connected = false;
-  this._decompressedSamples = new Array(3);
-  this._droppedPacketCounter = 0;
-  this._firstPacket = true;
-  this._lastDroppedPacket = null;
-  this._lastPacket = null;
   this._localName = null;
   this._multiPacketBuffer = null;
-  this._packetCounter = k.OBCIGanglionByteId18Bit.max;
   this._peripheral = null;
-  this._rawDataPacketToSample = k.rawDataToSampleObjectDefault(k.numberOfChannelsForBoardType(k.OBCIBoardGanglion));
+  this._rawDataPacketToSample = k.rawDataToSampleObjectDefault(k.numberOfChannelsForBoardType(k.OBCIBoardCytonBLE));
   this._rawDataPacketToSample.scale = !this.options.sendCounts;
   this._rawDataPacketToSample.protocol = k.OBCIProtocolBLE;
   this._rawDataPacketToSample.verbose = this.options.verbose;
@@ -145,15 +112,13 @@ function Ganglion (options, callback) {
   this._streaming = false;
 
   /** Public Properties (keep alphabetical) */
-  this.peripheralArray = [];
-  this.ganglionPeripheralArray = [];
-  this.previousPeripheralArray = [];
+  this.impedanceTest = obciUtils.impedanceTestObjDefault();
+  this.impedanceArray = obciUtils.impedanceArray(k.numberOfChannelsForBoardType(k.OBCIBoardCytonBLE));
+  this.cytonBLEPeripheralArray = [];
   this.manualDisconnect = false;
-
-  /** Initializations */
-  for (var i = 0; i < 3; i++) {
-    this._decompressedSamples[i] = [0, 0, 0, 0];
-  }
+  this.peripheralArray = [];
+  this.previousPeripheralArray = [];
+  this.sampleCount = 0;
 
   try {
     noble = require('noble');
@@ -165,29 +130,12 @@ function Ganglion (options, callback) {
 }
 
 // This allows us to use the emitter class freely outside of the module
-util.inherits(Ganglion, EventEmitter);
-
-/**
- * Used to enable the accelerometer. Will result in accelerometer packets arriving 10 times a second.
- *  Note that the accelerometer is enabled by default.
- * @return {Promise}
- */
-Ganglion.prototype.accelStart = function () {
-  return this.write(k.OBCIAccelStart);
-};
-
-/**
- * Used to disable the accelerometer. Prevents accelerometer data packets from arriving.
- * @return {Promise}
- */
-Ganglion.prototype.accelStop = function () {
-  return this.write(k.OBCIAccelStop);
-};
+util.inherits(CytonBLE, EventEmitter);
 
 /**
  * Used to start a scan if power is on. Useful if a connection is dropped.
  */
-Ganglion.prototype.autoReconnect = function () {
+CytonBLE.prototype.autoReconnect = function () {
   // TODO: send back reconnect status, or reconnect fail
   if (noble.state === k.OBCINobleStatePoweredOn) {
     this._nobleScanStart();
@@ -202,9 +150,8 @@ Ganglion.prototype.autoReconnect = function () {
  * @returns {Promise.<T>}
  * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype.channelOff = function (channelNumber) {
+CytonBLE.prototype.channelOff = function (channelNumber) {
   return k.commandChannelOff(channelNumber).then((charCommand) => {
-    // console.log('sent command to turn channel ' + channelNumber + ' by sending command ' + charCommand)
     return this.write(charCommand);
   });
 };
@@ -215,9 +162,8 @@ Ganglion.prototype.channelOff = function (channelNumber) {
  * @returns {Promise.<T>|*}
  * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype.channelOn = function (channelNumber) {
+CytonBLE.prototype.channelOn = function (channelNumber) {
   return k.commandChannelOn(channelNumber).then((charCommand) => {
-    // console.log('sent command to turn channel ' + channelNumber + ' by sending command ' + charCommand)
     return this.write(charCommand);
   });
 };
@@ -229,10 +175,10 @@ Ganglion.prototype.channelOn = function (channelNumber) {
  * @returns {Promise} If the board was able to connect.
  * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype.connect = function (id) {
+CytonBLE.prototype.connect = function (id) {
   return new Promise((resolve, reject) => {
     if (_.isString(id)) {
-      k.getPeripheralWithLocalName(this.ganglionPeripheralArray, id)
+      k.getPeripheralWithLocalName(this.cytonBLEPeripheralArray, id)
         .then((p) => {
           return this._nobleConnect(p);
         })
@@ -251,14 +197,14 @@ Ganglion.prototype.connect = function (id) {
 /**
  * Destroys the noble!
  */
-Ganglion.prototype.destroyNoble = function () {
+CytonBLE.prototype.destroyNoble = function () {
   this._nobleDestroy();
 };
 
 /**
  * Destroys the multi packet buffer.
  */
-Ganglion.prototype.destroyMultiPacketBuffer = function () {
+CytonBLE.prototype.destroyMultiPacketBuffer = function () {
   this._multiPacketBuffer = null;
 };
 
@@ -269,7 +215,7 @@ Ganglion.prototype.destroyMultiPacketBuffer = function () {
  * @returns {Promise} - fulfilled by a successful close, rejected otherwise.
  * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype.disconnect = function (stopStreaming) {
+CytonBLE.prototype.disconnect = function (stopStreaming) {
   // no need for timeout here; streamStop already performs a delay
   return Promise.resolve()
     .then(() => {
@@ -302,10 +248,10 @@ Ganglion.prototype.disconnect = function (stopStreaming) {
 };
 
 /**
- * Return the local name of the attached Ganglion device.
+ * Return the local name of the attached CytonBLE device.
  * @return {null|String}
  */
-Ganglion.prototype.getLocalName = function () {
+CytonBLE.prototype.getLocalName = function () {
   return this._localName;
 };
 
@@ -313,31 +259,285 @@ Ganglion.prototype.getLocalName = function () {
  * Get's the multi packet buffer.
  * @return {null|Buffer} - Can be null if no multi packets received.
  */
-Ganglion.prototype.getMutliPacketBuffer = function () {
+CytonBLE.prototype.getMutliPacketBuffer = function () {
   return this._multiPacketBuffer;
 };
 
 /**
- * Call to start testing impedance.
- * @return {global.Promise|Promise}
+ * @description Run a complete impedance test on a single channel, applying the test signal individually to P & N inputs.
+ * @param channelNumber - A Number, specifies which channel you want to test.
+ * @returns {Promise} - Fulfilled with a single channel impedance object.
+ * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype.impedanceStart = function () {
-  return this.write(k.OBCIGanglionImpedanceStart);
+CytonBLE.prototype.impedanceTestChannel = function (channelNumber) {
+  this.impedanceArray[channelNumber - 1] = obciUtils.impedanceObject(channelNumber);
+  return new Promise((resolve, reject) => {
+    this._impedanceTestSetChannel(channelNumber, true, false) // Sends command for P input on channel number.
+      .then(channelNumber => {
+        return this._impedanceTestCalculateChannel(channelNumber, true, false); // Calculates for P input of channel number
+      })
+      .then(channelNumber => {
+        return this._impedanceTestSetChannel(channelNumber, false, true); // Sends command for N input on channel number.
+      })
+      .then(channelNumber => {
+        return this._impedanceTestCalculateChannel(channelNumber, false, true); // Calculates for N input of channel number
+      })
+      .then(channelNumber => {
+        return this._impedanceTestSetChannel(channelNumber, false, false); // Sends command to stop applying test signal to P and N channel
+      })
+      .then(channelNumber => {
+        return this._impedanceTestFinalizeChannel(channelNumber, true, true); // Finalize the impedances.
+      })
+      .then((channelNumber) => resolve(this.impedanceArray[channelNumber - 1]))
+      .catch(err => reject(err));
+  });
 };
 
 /**
- * Call to stop testing impedance.
- * @return {global.Promise|Promise}
+ * @description Run impedance test on a single channel, applying the test signal only to P input.
+ * @param channelNumber - A Number, specifies which channel you want to test.
+ * @returns {Promise} - Fulfilled with a single channel impedance object.
+ * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype.impedanceStop = function () {
-  return this.write(k.OBCIGanglionImpedanceStop);
+CytonBLE.prototype.impedanceTestChannelInputP = function (channelNumber) {
+  this.impedanceArray[channelNumber - 1] = obciUtils.impedanceObject(channelNumber);
+  return new Promise((resolve, reject) => {
+    this._impedanceTestSetChannel(channelNumber, true, false) // Sends command for P input on channel number.
+      .then(channelNumber => {
+        return this._impedanceTestCalculateChannel(channelNumber, true, false); // Calculates for P input of channel number
+      })
+      .then(channelNumber => {
+        return this._impedanceTestSetChannel(channelNumber, false, false); // Sends command to stop applying test signal to P and N channel
+      })
+      .then(channelNumber => {
+        return this._impedanceTestFinalizeChannel(channelNumber, true, false); // Finalize the impedances.
+      })
+      .then((channelNumber) => resolve(this.impedanceArray[channelNumber - 1]))
+      .catch(err => reject(err));
+  });
+};
+
+/**
+ * @description Run impedance test on a single channel, applying the test signal to N input.
+ * @param channelNumber - A Number, specifies which channel you want to test.
+ * @returns {Promise} - Fulfilled with a single channel impedance object.
+ * @author AJ Keller (@pushtheworldllc)
+ */
+CytonBLE.prototype.impedanceTestChannelInputN = function (channelNumber) {
+  this.impedanceArray[channelNumber - 1] = obciUtils.impedanceObject(channelNumber);
+  return new Promise((resolve, reject) => {
+    this._impedanceTestSetChannel(channelNumber, false, true) // Sends command for N input on channel number.
+      .then(channelNumber => {
+        return this._impedanceTestCalculateChannel(channelNumber, false, true); // Calculates for N input of channel number
+      })
+      .then(channelNumber => {
+        return this._impedanceTestSetChannel(channelNumber, false, false); // Sends command to stop applying test signal to P and N channel
+      })
+      .then(channelNumber => {
+        return this._impedanceTestFinalizeChannel(channelNumber, false, true); // Finalize the impedances.
+      })
+      .then((channelNumber) => resolve(this.impedanceArray[channelNumber - 1]))
+      .catch(err => reject(err));
+  });
+};
+
+/* istanbul ignore next */
+/**
+ * @description To apply the impedance test signal to an input for any given channel
+ * @param channelNumber -  Number - The channel you want to test.
+ * @param pInput - A bool true if you want to apply the test signal to the P input, false to not apply the test signal.
+ * @param nInput - A bool true if you want to apply the test signal to the N input, false to not apply the test signal.
+ * @returns {Promise} - With Number value of channel number
+ * @private
+ * @author AJ Keller (@pushtheworldllc)
+ */
+CytonBLE.prototype._impedanceTestSetChannel = function (channelNumber, pInput, nInput) {
+  return new Promise((resolve, reject) => {
+    if (!this.isConnected()) return reject(Error('Must be connected'));
+
+    /* istanbul ignore if */
+    if (this.options.verbose) {
+      if (pInput && !nInput) {
+        console.log('\tSending command to apply test signal to P input.');
+      } else if (!pInput && nInput) {
+        console.log('\tSending command to apply test signal to N input.');
+      } else if (pInput && nInput) {
+        console.log('\tSending command to apply test signal to P and N inputs.');
+      } else {
+        console.log('\tSending command to stop applying test signal to both P and N inputs.');
+      }
+    }
+
+    if (!pInput && !nInput) {
+      this.impedanceTest.active = false; // Critical to changing the flow of `._processBytes()`
+      // this.writeOutDelay = k.OBCIWriteIntervalDelayMSShort
+    } else {
+      // this.writeOutDelay = k.OBCIWriteIntervalDelayMSLong
+    }
+    if (this.options.verbose) console.log('pInput: ' + pInput + ' nInput: ' + nInput);
+    // Get impedance settings to send the board
+    k.getImpedanceSetter(channelNumber, pInput, nInput).then((commandsArray) => {
+      return this.write(commandsArray);
+    }).then(() => {
+      /**
+       * If either pInput or nInput are true then we should start calculating impedance. Setting
+       *  this.impedanceTest.active to true here allows us to route every sample for an impedance
+       *  calculation instead of the normal sample output.
+       */
+      if (pInput || nInput) this.impedanceTest.active = true;
+      resolve(channelNumber);
+    }, (err) => {
+      reject(err);
+    });
+  });
+};
+
+/**
+ * @description Calculates the impedance for a specified channel for a set time
+ * @param channelNumber - A Number, the channel number you want to test.
+ * @param pInput - A bool true if you want to calculate impedance on the P input, false to not calculate.
+ * @param nInput - A bool true if you want to calculate impedance on the N input, false to not calculate.
+ * @returns {Promise} - Resolves channelNumber as value on fulfill, rejects with error...
+ * @private
+ * @author AJ Keller (@pushtheworldllc)
+ */
+CytonBLE.prototype._impedanceTestCalculateChannel = function (channelNumber, pInput, nInput) {
+  /* istanbul ignore if */
+  if (this.options.verbose) {
+    if (pInput && !nInput) {
+      console.log('\tCalculating impedance for P input.');
+    } else if (!pInput && nInput) {
+      console.log('\tCalculating impedance for N input.');
+    } else if (pInput && nInput) {
+      console.log('\tCalculating impedance for P and N input.');
+    } else {
+      console.log('\tNot calculating impedance for either P and N input.');
+    }
+  }
+  return new Promise((resolve, reject) => {
+    if (channelNumber < 1 || channelNumber > this.numberOfChannels()) return reject(Error('Invalid channel number'));
+    if (typeof pInput !== 'boolean') return reject(Error("Invalid Input: 'pInput' must be of type Bool"));
+    if (typeof nInput !== 'boolean') return reject(Error("Invalid Input: 'nInput' must be of type Bool"));
+    this.impedanceTest.onChannel = channelNumber;
+    this.impedanceTest.sampleNumber = 0; // Reset the sample number
+    this.impedanceTest.isTestingPInput = pInput;
+    this.impedanceTest.isTestingNInput = nInput;
+    // console.log(channelNumber + ' In calculate channel pInput: ' + pInput + ' this.impedanceTest.isTestingPInput: ' + this.impedanceTest.isTestingPInput)
+    // console.log(channelNumber + ' In calculate channel nInput: ' + nInput + ' this.impedanceTest.isTestingNInput: ' + this.impedanceTest.isTestingNInput)
+    setTimeout(() => { // Calculate for 250ms
+      this.impedanceTest.onChannel = 0;
+      /* istanbul ignore if */
+      if (this.options.verbose) {
+        if (pInput && !nInput) {
+          console.log('\tDone calculating impedance for P input.');
+        } else if (!pInput && nInput) {
+          console.log('\tDone calculating impedance for N input.');
+        } else if (pInput && nInput) {
+          console.log('\tDone calculating impedance for P and N input.');
+        } else {
+          console.log('\tNot calculating impedance for either P and N input.');
+        }
+      }
+      if (pInput) this.impedanceArray[channelNumber - 1].P.raw = this.impedanceTest.impedanceForChannel;
+      if (nInput) this.impedanceArray[channelNumber - 1].N.raw = this.impedanceTest.impedanceForChannel;
+      resolve(channelNumber);
+    }, 400);
+  });
+};
+
+/**
+ * @description Calculates average and gets textual value of impedance for a specified channel
+ * @param channelNumber - A Number, the channel number you want to finalize.
+ * @param pInput - A bool true if you want to finalize impedance on the P input, false to not finalize.
+ * @param nInput - A bool true if you want to finalize impedance on the N input, false to not finalize.
+ * @returns {Promise} - Resolves channelNumber as value on fulfill, rejects with error...
+ * @private
+ * @author AJ Keller (@pushtheworldllc)
+ */
+CytonBLE.prototype._impedanceTestFinalizeChannel = function (channelNumber, pInput, nInput) {
+  /* istanbul ignore if */
+  if (this.options.verbose) {
+    if (pInput && !nInput) {
+      console.log('\tFinalizing impedance for P input.');
+    } else if (!pInput && nInput) {
+      console.log('\tFinalizing impedance for N input.');
+    } else if (pInput && nInput) {
+      console.log('\tFinalizing impedance for P and N input.');
+    } else {
+      console.log('\tNot Finalizing impedance for either P and N input.');
+    }
+  }
+  return new Promise((resolve, reject) => {
+    if (channelNumber < 1 || channelNumber > this.numberOfChannels()) return reject(Error('Invalid channel number'));
+    if (typeof pInput !== 'boolean') return reject(Error("Invalid Input: 'pInput' must be of type Bool"));
+    if (typeof nInput !== 'boolean') return reject(Error("Invalid Input: 'nInput' must be of type Bool"));
+
+    if (pInput) obciUtils.impedanceSummarize(this.impedanceArray[channelNumber - 1].P);
+    if (nInput) obciUtils.impedanceSummarize(this.impedanceArray[channelNumber - 1].N);
+
+    setTimeout(() => {
+      resolve(channelNumber);
+    }, 50); // Introduce a delay to allow for extra time in case of back to back tests
+  });
+};
+
+/**
+ * @description To test specific input configurations of channels!
+ * @param arrayOfChannels - The array of configurations where:
+ *              'p' or 'P' is only test P input
+ *              'n' or 'N' is only test N input
+ *              'b' or 'B' is test both inputs (takes 66% longer to run)
+ *              '-' to ignore channel
+ *      EXAMPLE:
+ *          For 8 channel board: ['-','N','n','p','P','-','b','b']
+ *              (Note: it doesn't matter if capitalized or not)
+ * @returns {Promise} - Fulfilled with a loaded impedance object.
+ * @author AJ Keller (@pushtheworldllc)
+ */
+CytonBLE.prototype.impedanceTestChannels = function (arrayOfChannels) {
+  if (!Array.isArray(arrayOfChannels)) return Promise.reject(Error('Input must be array of channels... See Docs!'));
+  if (!this.isStreaming()) return Promise.reject(Error('Must be streaming!'));
+  // Check proper length of array
+  if (arrayOfChannels.length !== this.numberOfChannels()) return Promise.reject(Error('Array length mismatch, should have ' + this.numberOfChannels() + ' but array has length ' + arrayOfChannels.length));
+
+  // Recursive function call
+  let completeChannelImpedanceTest = (channelNumber) => {
+    return new Promise((resolve, reject) => {
+      if (channelNumber > arrayOfChannels.length) { // Base case!
+        this.emit('impedanceArray', this.impedanceArray);
+        this.impedanceTest.onChannel = 0;
+        resolve();
+      } else {
+        if (this.options.verbose) console.log('\n\nImpedance Test for channel ' + channelNumber);
+
+        let testCommand = arrayOfChannels[channelNumber - 1];
+
+        if (testCommand === 'p' || testCommand === 'P') {
+          this.impedanceTestChannelInputP(channelNumber).then(() => {
+            completeChannelImpedanceTest(channelNumber + 1).then(resolve, reject);
+          }).catch(err => reject(err));
+        } else if (testCommand === 'n' || testCommand === 'N') {
+          this.impedanceTestChannelInputN(channelNumber).then(() => {
+            completeChannelImpedanceTest(channelNumber + 1).then(resolve, reject);
+          }).catch(err => reject(err));
+        } else if (testCommand === 'b' || testCommand === 'B') {
+          this.impedanceTestChannel(channelNumber).then(() => {
+            completeChannelImpedanceTest(channelNumber + 1).then(resolve, reject);
+          }).catch(err => reject(err));
+        } else { // skip ('-') condition
+          completeChannelImpedanceTest(channelNumber + 1).then(resolve, reject);
+        }
+      }
+    });
+  };
+  return completeChannelImpedanceTest(1);
 };
 
 /**
  * @description Checks if the driver is connected to a board.
  * @returns {boolean} - True if connected.
  */
-Ganglion.prototype.isConnected = function () {
+CytonBLE.prototype.isConnected = function () {
   return this._connected;
 };
 
@@ -345,7 +545,7 @@ Ganglion.prototype.isConnected = function () {
  * @description Checks if bluetooth is powered on.
  * @returns {boolean} - True if bluetooth is powered on.
  */
-Ganglion.prototype.isNobleReady = function () {
+CytonBLE.prototype.isNobleReady = function () {
   return this._nobleReady();
 };
 
@@ -353,7 +553,7 @@ Ganglion.prototype.isNobleReady = function () {
  * @description Checks if noble is currently scanning.
  * @returns {boolean} - True if streaming.
  */
-Ganglion.prototype.isSearching = function () {
+CytonBLE.prototype.isSearching = function () {
   return this._scanning;
 };
 
@@ -361,7 +561,7 @@ Ganglion.prototype.isSearching = function () {
  * @description Checks if the board is currently sending samples.
  * @returns {boolean} - True if streaming.
  */
-Ganglion.prototype.isStreaming = function () {
+CytonBLE.prototype.isStreaming = function () {
   return this._streaming;
 };
 
@@ -372,17 +572,8 @@ Ganglion.prototype.isStreaming = function () {
  * Note: This is dependent on if you configured the board correctly on setup options
  * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype.numberOfChannels = function () {
-  return k.OBCINumberOfChannelsGanglion;
-};
-
-/**
- * @description To print out the register settings to the console
- * @returns {Promise.<T>|*}
- * @author AJ Keller (@pushtheworldllc)
- */
-Ganglion.prototype.printRegisterSettings = function () {
-  return this.write(k.OBCIMiscQueryRegisterSettings);
+CytonBLE.prototype.numberOfChannels = function () {
+  return k.OBCINumberOfChannelsCytonBLE;
 };
 
 /**
@@ -390,11 +581,11 @@ Ganglion.prototype.printRegisterSettings = function () {
  * @returns {Number} The sample rate
  * Note: This is dependent on if you configured the board correctly on setup options
  */
-Ganglion.prototype.sampleRate = function () {
+CytonBLE.prototype.sampleRate = function () {
   if (this.options.simulate) {
     return this.options.simulatorSampleRate;
   } else {
-    return k.OBCISampleRate200;
+    return k.OBCISampleRate250;
   }
 };
 
@@ -404,13 +595,13 @@ Ganglion.prototype.sampleRate = function () {
  * @param `maxSearchTime` {Number} - The amount of time to spend searching. (Default is 20 seconds)
  * @returns {Promise} - If scan was started
  */
-Ganglion.prototype.searchStart = function (maxSearchTime) {
+CytonBLE.prototype.searchStart = function (maxSearchTime) {
   const searchTime = maxSearchTime || k.OBCIGanglionBleSearchTime;
 
   return new Promise((resolve, reject) => {
     this._searchTimeout = setTimeout(() => {
       this._nobleScanStop().catch(reject);
-      reject('Timeout: Unable to find Ganglion');
+      reject('Timeout: Unable to find CytonBLE');
     }, searchTime);
 
     this._nobleScanStart()
@@ -430,7 +621,7 @@ Ganglion.prototype.searchStart = function (maxSearchTime) {
  * Called to end a search.
  * @return {global.Promise|Promise}
  */
-Ganglion.prototype.searchStop = function () {
+CytonBLE.prototype.searchStop = function () {
   return this._nobleScanStop();
 };
 
@@ -439,7 +630,7 @@ Ganglion.prototype.searchStop = function () {
  * @returns {Promise} - Fulfilled if the command was sent to board.
  * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype.softReset = function () {
+CytonBLE.prototype.softReset = function () {
   return this.write(k.OBCIMiscSoftReset);
 };
 
@@ -451,7 +642,7 @@ Ganglion.prototype.softReset = function () {
  *           mean the board will start streaming.
  * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype.streamStart = function () {
+CytonBLE.prototype.streamStart = function () {
   return new Promise((resolve, reject) => {
     if (this.isStreaming()) return reject('Error [.streamStart()]: Already streaming');
     this._streaming = true;
@@ -472,7 +663,7 @@ Ganglion.prototype.streamStart = function () {
  *           mean the board stopped streaming.
  * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype.streamStop = function () {
+CytonBLE.prototype.streamStop = function () {
   return new Promise((resolve, reject) => {
     if (!this.isStreaming()) return reject('Error [.streamStop()]: No stream to stop');
     this._streaming = false;
@@ -485,44 +676,12 @@ Ganglion.prototype.streamStop = function () {
 };
 
 /**
- * @description Puts the board in synthetic data generation mode. Must call streamStart still.
- * @returns {Promise} indicating if the signal was able to be sent.
- * @author AJ Keller (@pushtheworldllc)
- */
-Ganglion.prototype.syntheticEnable = function () {
-  return new Promise((resolve, reject) => {
-    this.write(k.OBCIGanglionSyntheticDataEnable)
-      .then(() => {
-        if (this.options.verbose) console.log('Enabled synthetic data mode.');
-        resolve();
-      })
-      .catch(reject);
-  });
-};
-
-/**
- * @description Takes the board out of synthetic data generation mode. Must call streamStart still.
- * @returns {Promise} - fulfilled if the command was sent.
- * @author AJ Keller (@pushtheworldllc)
- */
-Ganglion.prototype.syntheticDisable = function () {
-  return new Promise((resolve, reject) => {
-    this.write(k.OBCIGanglionSyntheticDataDisable)
-      .then(() => {
-        if (this.options.verbose) console.log('Disabled synthetic data mode.');
-        resolve();
-      })
-      .catch(reject);
-  });
-};
-
-/**
  * @description Used to send data to the board.
  * @param data {Array | Buffer | Number | String} - The data to write out
  * @returns {Promise} - fulfilled if command was able to be sent
  * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype.write = function (data) {
+CytonBLE.prototype.write = function (data) {
   return new Promise((resolve, reject) => {
     if (this._sendCharacteristic) {
       if (!Buffer.isBuffer(data)) {
@@ -545,49 +704,13 @@ Ganglion.prototype.write = function (data) {
 // //////// //
 // PRIVATES //
 // //////// //
-/**
- * Builds a sample object from an array and sample number.
- * @param sampleNumber
- * @param rawData
- * @return {{sampleNumber: *}}
- * @private
- */
-Ganglion.prototype._buildSample = function (sampleNumber, rawData) {
-  let sample = {
-    sampleNumber: sampleNumber,
-    timeStamp: Date.now()
-  };
-  if (this.options.sendCounts) {
-    sample['channelDataCounts'] = rawData;
-  } else {
-    sample['channelData'] = [];
-    for (let j = 0; j < k.OBCINumberOfChannelsGanglion; j++) {
-      sample.channelData.push(rawData[j] * k.OBCIGanglionScaleFactorPerCountVolts);
-    }
-  }
-  return sample;
-};
 
-/**
- * Utilize `receivedDeltas` to get actual count values.
- * @param receivedDeltas {Array} - An array of deltas
- *  of shape 2x4 (2 samples per packet and 4 channels per sample.)
- * @private
- */
-Ganglion.prototype._decompressSamples = function (receivedDeltas) {
-  // add the delta to the previous value
-  for (let i = 1; i < 3; i++) {
-    for (let j = 0; j < 4; j++) {
-      this._decompressedSamples[i][j] = this._decompressedSamples[i - 1][j] - receivedDeltas[i - 1][j];
-    }
-  }
-};
 
 /**
  * @description Called once when for any reason the ble connection is no longer open.
  * @private
  */
-Ganglion.prototype._disconnected = function () {
+CytonBLE.prototype._disconnected = function () {
   this._streaming = false;
   this._connected = false;
 
@@ -628,14 +751,14 @@ Ganglion.prototype._disconnected = function () {
  * Call to destroy the noble event emitters.
  * @private
  */
-Ganglion.prototype._nobleDestroy = function () {
+CytonBLE.prototype._nobleDestroy = function () {
   if (noble)  {
     noble.removeAllListeners(k.OBCINobleEmitterStateChange);
     noble.removeAllListeners(k.OBCINobleEmitterDiscover);
   }
 };
 
-Ganglion.prototype._nobleConnect = function (peripheral) {
+CytonBLE.prototype._nobleConnect = function (peripheral) {
   return new Promise((resolve, reject) => {
     if (this.isConnected()) return reject('already connected!');
 
@@ -661,27 +784,27 @@ Ganglion.prototype._nobleConnect = function (peripheral) {
 
     this._peripheral.on(k.OBCINobleEmitterPeripheralServicesDiscover, (services) => {
 
-      for (var i = 0; i < services.length; i++) {
-        if (services[i].uuid === k.SimbleeUuidService) {
+      for (let i = 0; i < services.length; i++) {
+        if (services[i].uuid === k.RFduinoUuidService) {
           this._rfduinoService = services[i];
-          // if (this.options.verbose) console.log("Found simblee Service");
+          // if (this.options.verbose) console.log("Found rfduino Service");
           break;
         }
       }
 
       if (!this._rfduinoService) {
-        reject('Couldn\'t find the simblee service.');
+        reject('Couldn\'t find the rfduino service.');
       }
 
       this._rfduinoService.once(k.OBCINobleEmitterServiceCharacteristicsDiscover, (characteristics) => {
         if (this.options.verbose) console.log('Discovered ' + characteristics.length + ' service characteristics');
-        for (var i = 0; i < characteristics.length; i++) {
+        for (let i = 0; i < characteristics.length; i++) {
           // console.log(characteristics[i].uuid);
-          if (characteristics[i].uuid === k.SimbleeUuidReceive) {
+          if (characteristics[i].uuid === k.RFduinoUuidReceive) {
             if (this.options.verbose) console.log("Found receiveCharacteristicUUID");
             this._receiveCharacteristic = characteristics[i];
           }
-          if (characteristics[i].uuid === k.SimbleeUuidSend) {
+          if (characteristics[i].uuid === k.RFduinoUuidSend) {
             if (this.options.verbose) console.log("Found sendCharacteristicUUID");
             this._sendCharacteristic = characteristics[i];
           }
@@ -723,7 +846,7 @@ Ganglion.prototype._nobleConnect = function (peripheral) {
  * Call to add the noble event listeners.
  * @private
  */
-Ganglion.prototype._nobleInit = function () {
+CytonBLE.prototype._nobleInit = function () {
   noble.on(k.OBCINobleEmitterStateChange, (state) => {
     // TODO: send state change error to gui
 
@@ -755,22 +878,22 @@ Ganglion.prototype._nobleInit = function () {
  * @param peripheral {Object} Peripheral object from noble.
  * @private
  */
-Ganglion.prototype._nobleOnDeviceDiscoveredCallback = function (peripheral) {
-  // if(this.options.verbose) console.log(peripheral.advertisement);
+CytonBLE.prototype._nobleOnDeviceDiscoveredCallback = function (peripheral) {
+  if(this.options.verbose) console.log(peripheral.advertisement);
   this.peripheralArray.push(peripheral);
-  if (k.isPeripheralGanglion(peripheral)) {
-    if (this.options.verbose) console.log('Found ganglion!');
-    if (_.isUndefined(_.find(this.ganglionPeripheralArray,
+  if (peripheral.advertisement.localName.match(/RFduino/)) {
+    if (this.options.verbose) console.log('Found rfduino!');
+    if (_.isUndefined(_.find(this.cytonBLEPeripheralArray,
         (p) => {
           return p.advertisement.localName === peripheral.advertisement.localName;
         }))) {
-      this.ganglionPeripheralArray.push(peripheral);
+      this.cytonBLEPeripheralArray.push(peripheral);
     }
-    this.emit(k.OBCIEmitterGanglionFound, peripheral);
+    this.emit(k.OBCIEmitterRFduino, peripheral);
   }
 };
 
-Ganglion.prototype._nobleReady = function () {
+CytonBLE.prototype._nobleReady = function () {
   return noble.state === k.OBCINobleStatePoweredOn;
 };
 
@@ -779,7 +902,7 @@ Ganglion.prototype._nobleReady = function () {
  * @returns {global.Promise|Promise}
  * @private
  */
-Ganglion.prototype._nobleScanStart = function () {
+CytonBLE.prototype._nobleScanStart = function () {
   return new Promise((resolve, reject) => {
     if (this.isSearching()) return reject(k.OBCIErrorNobleAlreadyScanning);
     if (!this._nobleReady()) return reject(k.OBCIErrorNobleNotInPoweredOnState);
@@ -791,8 +914,7 @@ Ganglion.prototype._nobleScanStart = function () {
       this.emit(k.OBCINobleEmitterScanStart);
       resolve();
     });
-    // Only look so simblee ble devices and allow duplicates (multiple ganglions)
-    // noble.startScanning([k.SimbleeUuidService], true);
+    // Only look so rfduino ble devices and allow duplicates (multiple ganglions)
     noble.startScanning([], false);
   });
 };
@@ -802,7 +924,7 @@ Ganglion.prototype._nobleScanStart = function () {
  * @return {global.Promise|Promise}
  * @private
  */
-Ganglion.prototype._nobleScanStop = function () {
+CytonBLE.prototype._nobleScanStop = function () {
   return new Promise((resolve, reject) => {
     if (!this.isSearching()) return reject(k.OBCIErrorNobleNotAlreadyScanning);
     if (this.options.verbose) console.log(`Stopping scan`);
@@ -820,277 +942,56 @@ Ganglion.prototype._nobleScanStop = function () {
 
 /**
  * Route incoming data to proper functions
- * @param data {Buffer} - Data buffer from noble Ganglion.
+ * @param data {Buffer} - Data buffer from noble CytonBLE.
  * @private
  */
-Ganglion.prototype._processBytes = function (data) {
+CytonBLE.prototype._processBytes = function (data) {
   if (this.options.debug) obciDebug.debugBytes('<<', data);
   this.lastPacket = data;
-  let byteId = parseInt(data[0]);
-  if (byteId <= k.OBCIGanglionByteId19Bit.max) {
-    this._processProcessSampleData(data);
-  } else {
-    switch (byteId) {
-      case k.OBCIGanglionByteIdMultiPacket:
-        this._processMultiBytePacket(data);
-        break;
-      case k.OBCIGanglionByteIdMultiPacketStop:
-        this._processMultiBytePacketStop(data);
-        break;
-      case k.OBCIGanglionByteIdImpedanceChannel1:
-      case k.OBCIGanglionByteIdImpedanceChannel2:
-      case k.OBCIGanglionByteIdImpedanceChannel3:
-      case k.OBCIGanglionByteIdImpedanceChannel4:
-      case k.OBCIGanglionByteIdImpedanceChannelReference:
-        this._processImpedanceData(data);
-        break;
-      default:
-        this._processOtherData(data);
+  const rawDataPackets = obciUtils.extractRawBLEDataPackets(data);
+
+  _.forEach(rawDataPackets, (rawDataPacket) => {
+    // Emit that buffer
+    this.emit(k.OBCIEmitterRawDataPacket, rawDataPacket);
+    // Submit the packet for processing
+    let missedPacketArray = obciUtils.droppedPacketCheck(this.previousSampleNumber, rawDataPacket[k.OBCIPacketPositionSampleNumber]);
+    if (missedPacketArray) {
+      this.emit(k.OBCIEmitterDroppedPacket, missedPacketArray);
     }
-  }
-};
-
-/**
- * Process an compressed packet of data.
- * @param data {Buffer}
- *  Data packet buffer from noble.
- * @private
- */
-Ganglion.prototype._processCompressedData = function (data) {
-  // Save the packet counter
-  this._packetCounter = parseInt(data[0]);
-
-  // Decompress the buffer into array
-  if (this._packetCounter <= k.OBCIGanglionByteId18Bit.max) {
-    this._decompressSamples(obciUtils.decompressDeltas18Bit(data.slice(k.OBCIGanglionPacket18Bit.dataStart, k.OBCIGanglionPacket18Bit.dataStop)));
-    switch (this._packetCounter % 10) {
-      case k.OBCIGanglionAccelAxisX:
-        this._accelArray[0] = this.options.sendCounts ? data.readInt8(k.OBCIGanglionPacket18Bit.auxByte - 1) : data.readInt8(k.OBCIGanglionPacket18Bit.auxByte - 1) * k.OBCIGanglionAccelScaleFactor;
-        break;
-      case k.OBCIGanglionAccelAxisY:
-        this._accelArray[1] = this.options.sendCounts ? data.readInt8(k.OBCIGanglionPacket18Bit.auxByte - 1) : data.readInt8(k.OBCIGanglionPacket18Bit.auxByte - 1) * k.OBCIGanglionAccelScaleFactor;
-        break;
-      case k.OBCIGanglionAccelAxisZ:
-        this._accelArray[2] = this.options.sendCounts ? data.readInt8(k.OBCIGanglionPacket18Bit.auxByte - 1) : data.readInt8(k.OBCIGanglionPacket18Bit.auxByte - 1) * k.OBCIGanglionAccelScaleFactor;
-        this.emit(k.OBCIEmitterAccelerometer, this._accelArray);
-        break;
-      default:
-        break;
-    }
-    const sample1 = this._buildSample(this._packetCounter * 2 - 1, this._decompressedSamples[1]);
-    this.emit(k.OBCIEmitterSample, sample1);
-
-    const sample2 = this._buildSample(this._packetCounter * 2, this._decompressedSamples[2]);
-    this.emit(k.OBCIEmitterSample, sample2);
-
-  } else {
-    this._decompressSamples(obciUtils.decompressDeltas19Bit(data.slice(k.OBCIGanglionPacket19Bit.dataStart, k.OBCIGanglionPacket19Bit.dataStop)));
-
-    const sample1 = this._buildSample((this._packetCounter - 100) * 2 - 1, this._decompressedSamples[1]);
-    this.emit(k.OBCIEmitterSample, sample1);
-
-    const sample2 = this._buildSample((this._packetCounter - 100) * 2, this._decompressedSamples[2]);
-    this.emit(k.OBCIEmitterSample, sample2);
-  }
-
-  // Rotate the 0 position for next time
-  for (let i = 0; i < k.OBCINumberOfChannelsGanglion; i++) {
-    this._decompressedSamples[0][i] = this._decompressedSamples[2][i];
-  }
-};
-
-/**
- * Process and emit an impedance value
- * @param data {Buffer}
- * @private
- */
-Ganglion.prototype._processImpedanceData = function (data) {
-  if (this.options.debug) obciDebug.debugBytes('Impedance <<< ', data);
-  const byteId = parseInt(data[0]);
-  let channelNumber;
-  switch (byteId) {
-    case k.OBCIGanglionByteIdImpedanceChannel1:
-      channelNumber = 1;
-      break;
-    case k.OBCIGanglionByteIdImpedanceChannel2:
-      channelNumber = 2;
-      break;
-    case k.OBCIGanglionByteIdImpedanceChannel3:
-      channelNumber = 3;
-      break;
-    case k.OBCIGanglionByteIdImpedanceChannel4:
-      channelNumber = 4;
-      break;
-    case k.OBCIGanglionByteIdImpedanceChannelReference:
-      channelNumber = 0;
-      break;
-  }
-
-  let output = {
-    channelNumber: channelNumber,
-    impedanceValue: 0
-  };
-
-  let end = data.length;
-
-  while (_.isNaN(Number(data.slice(1, end))) && end !== 0) {
-    end--;
-  }
-
-  if (end !== 0) {
-    output.impedanceValue = Number(data.slice(1, end));
-  }
-
-  this.emit('impedance', output);
-};
-
-/**
- * Used to stack multi packet buffers into the multi packet buffer. This is finally emitted when a stop packet byte id
- *  is received.
- * @param data {Buffer}
- *  The multi packet buffer.
- * @private
- */
-Ganglion.prototype._processMultiBytePacket = function (data) {
-  if (this._multiPacketBuffer) {
-    this._multiPacketBuffer = Buffer.concat([this._multiPacketBuffer, data.slice(k.OBCIGanglionPacket19Bit.dataStart, k.OBCIGanglionPacket19Bit.dataStop)]);
-  } else {
-    this._multiPacketBuffer = data.slice(k.OBCIGanglionPacket19Bit.dataStart, k.OBCIGanglionPacket19Bit.dataStop);
-  }
-};
-
-/**
- * Adds the `data` buffer to the multi packet buffer and emits the buffer as 'message'
- * @param data {Buffer}
- *  The multi packet stop buffer.
- * @private
- */
-Ganglion.prototype._processMultiBytePacketStop = function (data) {
-  this._processMultiBytePacket(data);
-  this.emit(k.OBCIEmitterMessage, this._multiPacketBuffer);
-  this.destroyMultiPacketBuffer();
-};
-
-Ganglion.prototype._resetDroppedPacketSystem = function () {
-  this._packetCounter = -1;
-  this._firstPacket = true;
-  this._droppedPacketCounter = 0;
-};
-
-Ganglion.prototype._droppedPacket = function (droppedPacketNumber) {
-  this.emit(k.OBCIEmitterDroppedPacket, [droppedPacketNumber]);
-  this._droppedPacketCounter++;
-};
-
-/**
- * Checks for dropped packets
- * @param data {Buffer}
- * @private
- */
-Ganglion.prototype._processProcessSampleData = function(data) {
-  const curByteId = parseInt(data[0]);
-  const difByteId = curByteId - this._packetCounter;
-
-  if (this._firstPacket) {
-    this._firstPacket = false;
-    this._processRouteSampleData(data);
-    return;
-  }
-
-  // Wrap around situation
-  if (difByteId < 0) {
-    if (this._packetCounter <= k.OBCIGanglionByteId18Bit.max) {
-      if (this._packetCounter === k.OBCIGanglionByteId18Bit.max) {
-        if (curByteId !== k.OBCIGanglionByteIdUncompressed) {
-          this._droppedPacket(curByteId - 1);
-        }
-      } else {
-        let tempCounter = this._packetCounter + 1;
-        while (tempCounter <= k.OBCIGanglionByteId18Bit.max) {
-          this._droppedPacket(tempCounter);
-          tempCounter++;
-        }
-      }
-    } else if (this._packetCounter === k.OBCIGanglionByteId19Bit.max) {
-      if (curByteId !== k.OBCIGanglionByteIdUncompressed) {
-        this._droppedPacket(curByteId - 1);
-      }
+    this.previousSampleNumber = rawDataPacket[k.OBCIPacketPositionSampleNumber];
+    this._rawDataPacketToSample.rawDataPacket = rawDataPacket;
+    const sample = obciUtils.transformRawDataPacketToSample(this._rawDataPacketToSample);
+    sample._count = this.sampleCount++;
+    if (this.impedanceTest.active) {
+      this._processImpedanceTest(sample);
     } else {
-      let tempCounter = this._packetCounter + 1;
-      while (tempCounter <= k.OBCIGanglionByteId19Bit.max) {
-        this._droppedPacket(tempCounter);
-        tempCounter++;
-      }
+      this.emit(k.OBCIEmitterSample, sample);
     }
-  } else if (difByteId > 1) {
-    if (this._packetCounter === k.OBCIGanglionByteIdUncompressed && curByteId === k.OBCIGanglionByteId19Bit.min) {
-      this._processRouteSampleData(data);
-      return;
-    } else {
-      let tempCounter = this._packetCounter + 1;
-      while (tempCounter < curByteId) {
-        this._droppedPacket(tempCounter);
-        tempCounter++;
-      }
-    }
-  }
-  this._processRouteSampleData(data);
-};
-
-Ganglion.prototype._processRouteSampleData = function(data) {
-  if (parseInt(data[0]) === k.OBCIGanglionByteIdUncompressed) {
-    this._processUncompressedData(data);
-  } else {
-    this._processCompressedData(data);
-  }
+  });
 };
 
 /**
- * The default route when a ByteId is not recognized.
- * @param data {Buffer}
+ * @description A method used to compute impedances.
+ * @param sampleObject - A sample object that follows the normal standards.
  * @private
+ * @author AJ Keller (@pushtheworldllc)
  */
-Ganglion.prototype._processOtherData = function (data) {
-  obciDebug.debugBytes('OtherData <<< ', data);
+CytonBLE.prototype._processImpedanceTest = function (sampleObject) {
+  let impedanceArray;
+  if (this.impedanceTest.continuousMode) {
+    // console.log('running in continuous mode...')
+    // obciUtils.debugPrettyPrint(sampleObject)
+    impedanceArray = obciUtils.impedanceCalculateArray(sampleObject, this.impedanceTest);
+    if (impedanceArray) {
+      this.emit('impedanceArray', impedanceArray);
+    }
+  } else if (this.impedanceTest.onChannel !== 0) {
+    // Only calculate impedance for one channel
+    impedanceArray = obciUtils.impedanceCalculateArray(sampleObject, this.impedanceTest);
+    if (impedanceArray) {
+      this.impedanceTest.impedanceForChannel = impedanceArray[this.impedanceTest.onChannel - 1];
+    }
+  }
 };
 
-/**
- * Process an uncompressed packet of data.
- * @param data {Buffer}
- *  Data packet buffer from noble.
- * @private
- */
-Ganglion.prototype._processUncompressedData = function (data) {
-  let start = 1;
-
-  // Resets the packet counter back to zero
-  this._packetCounter = k.OBCIGanglionByteIdUncompressed;  // used to find dropped packets
-  data.copy(this._rawDataPacketToSample.rawDataPacket, 2);
-
-  for (let i = 0; i < 4; i++) {
-    this._decompressedSamples[0][i] = interpret24bitAsInt32(data, start);  // seed the decompressor
-    start += 3;
-  }
-
-  const newSample = this._buildSample(0, this._decompressedSamples[0]);
-  this._rawDataPacketToSample.rawDataPacket = rawDataPacket;
-  const sample = obciUtils.transformRawDataPacketToSample(this._rawDataPacketToSample);
-  this.emit(k.OBCIEmitterSample, newSample);
-};
-
-module.exports = Ganglion;
-
-function interpret24bitAsInt32 (byteArray, index) {
-  // little endian
-  var newInt = (
-    ((0xFF & byteArray[index]) << 16) |
-    ((0xFF & byteArray[index + 1]) << 8) |
-    (0xFF & byteArray[index + 2])
-  );
-  if ((newInt & 0x00800000) > 0) {
-    newInt |= 0xFF000000;
-  } else {
-    newInt &= 0x00FFFFFF;
-  }
-  return newInt;
-}
+module.exports = CytonBLE;

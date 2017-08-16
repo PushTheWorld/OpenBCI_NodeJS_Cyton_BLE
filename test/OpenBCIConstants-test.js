@@ -273,7 +273,7 @@ describe('OpenBCIConstants', function () {
     });
   });
   describe('Number of channels', function () {
-    it('Ganglion', function () {
+    it('CytonBLE', function () {
       assert.equal(4, k.OBCINumberOfChannelsGanglion);
     });
   });
@@ -306,7 +306,7 @@ describe('OpenBCIConstants', function () {
     it('Event Emitter Error', function () {
       assert.equal('error', k.OBCIEmitterError);
     });
-    it('Event Emitter Ganglion Found', function () {
+    it('Event Emitter CytonBLE Found', function () {
       assert.equal('ganglionFound', k.OBCIEmitterGanglionFound);
     });
     it('Event Emitter Impedance', function () {
@@ -329,13 +329,13 @@ describe('OpenBCIConstants', function () {
     });
   });
   describe('General', function () {
-    it('Ganglion prefix', function () {
-      assert.equal('Ganglion', k.OBCIGanglionPrefix);
+    it('CytonBLE prefix', function () {
+      assert.equal('CytonBLE', k.OBCIGanglionPrefix);
     });
-    it('Ganglion ble search time', function () {
+    it('CytonBLE ble search time', function () {
       assert.equal(0.032, k.OBCIGanglionAccelScaleFactor);
     });
-    it('Ganglion ble search time', function () {
+    it('CytonBLE ble search time', function () {
       assert.equal(20000, k.OBCIGanglionBleSearchTime);
     });
     it('packet size', function () {

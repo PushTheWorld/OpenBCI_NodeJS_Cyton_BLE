@@ -13,7 +13,7 @@ let ganglion = new Ganglion({
     console.log(error);
   } else {
     if (verbose) {
-      console.log('Ganglion initialize completed');
+      console.log('CytonBLE initialize completed');
     }
   }
 });
