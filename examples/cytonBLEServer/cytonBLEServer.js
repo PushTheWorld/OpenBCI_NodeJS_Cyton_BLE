@@ -15,6 +15,8 @@ let cytonBLE = new CytonBLE({
   }
 });
 
+//Fake Packet: 4101000000000000000000000000000000000000000000000000000000000000C0
+
 function errorFunc (err) {
   throw err;
 }
@@ -54,6 +56,7 @@ cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
 
   cytonBLE.on('close', () => {
     console.log('close event');
+    process.exit(0);
   });
 
   cytonBLE.on('droppedPacket', (data) => {
@@ -84,16 +87,16 @@ function exitHandler (options, err) {
     if (verbose) console.log('clean');
     // console.log(connectedPeripheral)
     cytonBLE.manualDisconnect = true;
-    cytonBLE.disconnect();
-    cytonBLE.removeAllListeners('droppedPacket');
+    cytonBLE.disconnect().catch(console.log);
+    cytonBLE.removeAllListeners(k.OBCIEmitterDroppedPacket);
     cytonBLE.removeAllListeners('accelerometer');
-    cytonBLE.removeAllListeners('sample');
-    cytonBLE.removeAllListeners('message');
-    cytonBLE.removeAllListeners('impedance');
-    cytonBLE.removeAllListeners('close');
-    cytonBLE.removeAllListeners('error');
+    cytonBLE.removeAllListeners(k.OBCIEmitterSample);
+    cytonBLE.removeAllListeners(k.OBCIEmitterMessage);
+    cytonBLE.removeAllListeners(k.OBCIEmitterImpedanceArray);
+    cytonBLE.removeAllListeners(k.OBCIEmitterClose);
+    cytonBLE.removeAllListeners(k.OBCIEmitterError);
     cytonBLE.removeAllListeners(k.OBCIEmitterRFduino);
-    cytonBLE.removeAllListeners('ready');
+    cytonBLE.removeAllListeners(k.OBCIEmitterReady);
     cytonBLE.destroyNoble();
 
   }
@@ -102,8 +105,14 @@ function exitHandler (options, err) {
     if (verbose) console.log('exit');
 
     cytonBLE.manualDisconnect = true;
-    cytonBLE.disconnect(true).catch(console.log);
-    process.exit(0);
+    cytonBLE.streamStop()
+      .then(() => {
+        process.exit(0);
+      })
+      .catch((err) => {
+        console.log(err);
+        process.exit(0);
+      });
   }
 }
 

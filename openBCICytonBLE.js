@@ -118,6 +118,7 @@ function CytonBLE (options, callback) {
   this.manualDisconnect = false;
   this.peripheralArray = [];
   this.previousPeripheralArray = [];
+  this.previousSampleNumber = -1;
   this.sampleCount = 0;
 
   try {
