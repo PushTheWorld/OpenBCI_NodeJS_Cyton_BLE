@@ -23,6 +23,7 @@ function errorFunc (err) {
 
 const impedance = false;
 const accel = false;
+let lastSampleNumber = 0;
 
 cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
   cytonBLE.searchStop().catch(errorFunc);
@@ -33,25 +34,26 @@ cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
   let sizeOfBuf = 0;
   cytonBLE.on('sample', (sample) => {
     /** Work with sample */
-    console.log(sample.sampleNumber);
+    // console.log(sample.sampleNumber);
 
     // UNCOMMENT BELOW FOR DROPPED PACKET CALCULATIONS...
-    // if (sample.sampleNumber === 0) {
-    //   buf.push(droppedPacketCounter);
-    //   sizeOfBuf++;
-    //   droppedPacketCounter = 0;
-    //   if (sizeOfBuf >= 60) {
-    //     var sum = 0;
-    //     for (let i = 0; i < buf.length; i++) {
-    //       sum += parseInt(buf[i], 10);
-    //     }
-    //     const percentDropped = sum / 6000 * 100;
-    //     console.log(`dropped packet rate: ${sum} - percent dropped: %${percentDropped.toFixed(2)}`);
-    //     buf.shift();
-    //   } else {
-    //     console.log(`time till average rate starts ${60 - sizeOfBuf}`);
-    //   }
-    // }
+    if (sample.sampleNumber < lastSampleNumber) {
+      buf.push(droppedPacketCounter);
+      sizeOfBuf++;
+      droppedPacketCounter = 0;
+      if (sizeOfBuf >= 60) {
+        var sum = 0;
+        for (let i = 0; i < buf.length; i++) {
+          sum += parseInt(buf[i], 10);
+        }
+        const percentDropped = sum / 6000 * 100;
+        console.log(`dropped packet rate: ${sum} - percent dropped: %${percentDropped.toFixed(2)}`);
+        buf.shift();
+      } else {
+        console.log(`time till average rate starts ${60 - sizeOfBuf}`);
+      }
+    }
+    lastSampleNumber = sample.sampleNumber;
   });
 
   cytonBLE.on('close', () => {
@@ -60,7 +62,7 @@ cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
   });
 
   cytonBLE.on('droppedPacket', (data) => {
-    console.log('droppedPacket:', data);
+    // console.log('droppedPacket:', data);
     droppedPacketCounter++;
   });
 
