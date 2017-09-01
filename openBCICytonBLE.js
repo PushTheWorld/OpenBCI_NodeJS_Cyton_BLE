@@ -678,7 +678,7 @@ CytonBLE.prototype.streamStop = function () {
 
 /**
  * @description Used to send data to the board.
- * @param data {Array | Buffer | Number | String} - The data to write out
+ * @param data {Array | Buffer | Buffer2 | Number | String} - The data to write out
  * @returns {Promise} - fulfilled if command was able to be sent
  * @author AJ Keller (@pushtheworldllc)
  */

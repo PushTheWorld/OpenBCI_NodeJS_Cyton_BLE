@@ -15,8 +15,8 @@ let cytonBLE = new CytonBLE({
   }
 });
 
-//Fake Packet: 4101000000000000000000000000000000000000000000000000000000000000C0
-
+// Fake Stream Packet: 4101000000000000000000000000000000000000000000000000000000000000C0
+// Fake BLE Packet: C101000000000000000000000000000000000000
 function errorFunc (err) {
   throw err;
 }
@@ -34,26 +34,30 @@ cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
   let sizeOfBuf = 0;
   cytonBLE.on('sample', (sample) => {
     /** Work with sample */
-    // console.log(sample.sampleNumber);
+    console.log(sample.sampleNumber);
 
     // UNCOMMENT BELOW FOR DROPPED PACKET CALCULATIONS...
-    if (sample.sampleNumber < lastSampleNumber) {
-      buf.push(droppedPacketCounter);
-      sizeOfBuf++;
-      droppedPacketCounter = 0;
-      if (sizeOfBuf >= 60) {
-        var sum = 0;
-        for (let i = 0; i < buf.length; i++) {
-          sum += parseInt(buf[i], 10);
-        }
-        const percentDropped = sum / 6000 * 100;
-        console.log(`dropped packet rate: ${sum} - percent dropped: %${percentDropped.toFixed(2)}`);
-        buf.shift();
-      } else {
-        console.log(`time till average rate starts ${60 - sizeOfBuf}`);
-      }
+    // if (sample.sampleNumber < lastSampleNumber) {
+    //   buf.push(droppedPacketCounter);
+    //   sizeOfBuf++;
+    //   droppedPacketCounter = 0;
+    //   if (sizeOfBuf >= 60) {
+    //     var sum = 0;
+    //     for (let i = 0; i < buf.length; i++) {
+    //       sum += parseInt(buf[i], 10);
+    //     }
+    //     const percentDropped = sum / 6000 * 100;
+    //     console.log(`dropped packet rate: ${sum} - percent dropped: %${percentDropped.toFixed(2)}`);
+    //     buf.shift();
+    //   } else {
+    //     console.log(`time till average rate starts ${60 - sizeOfBuf}`);
+    //   }
+    // }
+    if (sample.sampleNumber - lastSampleNumber > 1) {
+      console.log('dropped packet');
     }
     lastSampleNumber = sample.sampleNumber;
+
   });
 
   cytonBLE.on('close', () => {
@@ -76,8 +80,21 @@ cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
   });
 
   cytonBLE.once('ready', () => {
+    // cytonBLE.write(Buffer.from("/5")) // Puts cyton in ble mode
+    //   .then(() => {
+    //     return new Promise((resolve, reject) => {
+    //       setTimeout(() => {
+    //         cytonBLE.write(Buffer.from([0x0B]))
+    //           .then(resolve).catch(reject);
+    //       }, 200);
+    //     })
+    //   })
+    //   .then(() => {
+    //     return cytonBLE.streamStart();
+    //   })
+    //   .catch(errorFunc);
     cytonBLE.streamStart().catch(errorFunc);
-      console.log('ready');
+    console.log('ready');
 
   });
 
@@ -107,7 +124,30 @@ function exitHandler (options, err) {
     if (verbose) console.log('exit');
 
     cytonBLE.manualDisconnect = true;
+
+    // let prommy;
+    // if (cytonBLE) {
+    //   if (cytonBLE.isStreaming()) {
+    //     prommy = cytonBLE.streamStop;
+    //   } else {
+    //     prommy = Promise.resolve;
+    //   }
+    // } else {
+    //   prommy = Promise.resolve;
+    // }
+
     cytonBLE.streamStop()
+      // .then(() => {
+      //   return cytonBLE.write(Buffer.from("/0")) // Tells pic32 to go back to 115200 mode
+      // })
+      // .then(() => {
+      //   return new Promise((resolve, reject) => {
+      //     setTimeout(() => {
+      //       cytonBLE.write(Buffer.from([0x05])) // puts the rfduino back into 115200
+      //         .then(resolve).catch(reject);
+      //     }, 200);
+      //   })
+      // })
       .then(() => {
         process.exit(0);
       })
@@ -115,6 +155,7 @@ function exitHandler (options, err) {
         console.log(err);
         process.exit(0);
       });
+
   }
 }
 
