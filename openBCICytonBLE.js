@@ -955,8 +955,31 @@ CytonBLE.prototype._processBytes = function (data) {
     // Emit that buffer
     this.emit(k.OBCIEmitterRawDataPacket, rawDataPacket);
     // Submit the packet for processing
-    let missedPacketArray = obciUtils.droppedPacketCheck(this.previousSampleNumber, rawDataPacket[k.OBCIPacketPositionSampleNumber]);
-    if (missedPacketArray) {
+    let missedPacketArray = [];
+    const curSampleNumber = rawDataPacket[k.OBCIPacketPositionSampleNumber];
+
+    const sampleDiff = curSampleNumber - this.previousSampleNumber;
+    let numMissed = 0;
+
+    if (this.previousSampleNumber === -1) {
+      numMissed = 0;
+    } else if (sampleDiff > 1) {
+      numMissed = sampleDiff - 1;
+    } else if (sampleDiff < 0) {
+      numMissed = 130 + sampleDiff;
+      if (numMissed === 3) {
+        numMissed = 0;
+      }
+    }
+    for (let i = 0; i < numMissed; i++) {
+      let missedSampleNumber = this.previousSampleNumber + i + 1;
+      if (missedSampleNumber > 130) {
+        missedSampleNumber -= 131;
+      }
+      missedPacketArray.push(missedSampleNumber);
+    }
+
+    if (missedPacketArray.length > 0) {
       this.emit(k.OBCIEmitterDroppedPacket, missedPacketArray);
     }
     this.previousSampleNumber = rawDataPacket[k.OBCIPacketPositionSampleNumber];

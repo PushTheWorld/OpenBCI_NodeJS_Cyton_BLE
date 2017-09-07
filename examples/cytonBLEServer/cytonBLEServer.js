@@ -4,7 +4,8 @@ const verbose = true;
 let cytonBLE = new CytonBLE({
   debug: false,
   sendCounts: false,
-  verbose: verbose
+  verbose: verbose,
+  nobleScanOnPowerOn: false
 }, (error) => {
   if (error) {
     console.log(error);
@@ -37,25 +38,25 @@ cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
     console.log(sample.sampleNumber);
 
     // UNCOMMENT BELOW FOR DROPPED PACKET CALCULATIONS...
-    // if (sample.sampleNumber < lastSampleNumber) {
-    //   buf.push(droppedPacketCounter);
-    //   sizeOfBuf++;
-    //   droppedPacketCounter = 0;
-    //   if (sizeOfBuf >= 60) {
-    //     var sum = 0;
-    //     for (let i = 0; i < buf.length; i++) {
-    //       sum += parseInt(buf[i], 10);
-    //     }
-    //     const percentDropped = sum / 6000 * 100;
-    //     console.log(`dropped packet rate: ${sum} - percent dropped: %${percentDropped.toFixed(2)}`);
-    //     buf.shift();
-    //   } else {
-    //     console.log(`time till average rate starts ${60 - sizeOfBuf}`);
-    //   }
-    // }
-    if (sample.sampleNumber - lastSampleNumber > 1) {
-      console.log('dropped packet');
+    if (sample.sampleNumber < lastSampleNumber) {
+      buf.push(droppedPacketCounter);
+      sizeOfBuf++;
+      droppedPacketCounter = 0;
+      if (sizeOfBuf >= 60) {
+        var sum = 0;
+        for (let i = 0; i < buf.length; i++) {
+          sum += parseInt(buf[i], 10);
+        }
+        const percentDropped = sum / 6000 * 100;
+        console.log(`dropped packet rate: ${sum} - percent dropped: %${percentDropped.toFixed(2)}`);
+        buf.shift();
+      } else {
+        console.log(`time till average rate starts ${60 - sizeOfBuf}`);
+      }
     }
+    // if (sample.sampleNumber - lastSampleNumber > 1) {
+    //   console.log('dropped packet');
+    // }
     lastSampleNumber = sample.sampleNumber;
 
   });
@@ -66,7 +67,7 @@ cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
   });
 
   cytonBLE.on('droppedPacket', (data) => {
-    // console.log('droppedPacket:', data);
+    console.log('droppedPacket:', data);
     droppedPacketCounter++;
   });
 
@@ -100,6 +101,11 @@ cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
 
   cytonBLE.connect(peripheral).catch(errorFunc);
 });
+
+cytonBLE.once(k.OBCIEmitterBlePoweredUp, () => {
+  cytonBLE.searchStart().catch(errorFunc);
+});
+
 
 function exitHandler (options, err) {
   if (options.cleanup) {
