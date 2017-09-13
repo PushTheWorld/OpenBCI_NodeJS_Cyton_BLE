@@ -23,6 +23,7 @@ function errorFunc (err) {
 }
 
 const impedance = false;
+let srIntervalFunction = null;
 const accel = false;
 let lastSampleNumber = 0;
 
@@ -35,7 +36,7 @@ cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
   let sizeOfBuf = 0;
   cytonBLE.on('sample', (sample) => {
     /** Work with sample */
-    console.log(sample.sampleNumber);
+    // console.log(sample.sampleNumber);
 
     // UNCOMMENT BELOW FOR DROPPED PACKET CALCULATIONS...
     if (sample.sampleNumber < lastSampleNumber) {
@@ -69,6 +70,7 @@ cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
   cytonBLE.on('droppedPacket', (data) => {
     console.log('droppedPacket:', data);
     droppedPacketCounter++;
+
   });
 
   cytonBLE.on('message', (message) => {
@@ -96,6 +98,12 @@ cytonBLE.once(k.OBCIEmitterRFduino, (peripheral) => {
     //   .catch(errorFunc);
     cytonBLE.streamStart().catch(errorFunc);
     console.log('ready');
+    srIntervalFunction = setInterval(() => {
+      console.log(`Receiving ${cytonBLE._packetCounter} packets per second`);
+      cytonBLE._packetCounter = 0;
+    }, 1000);
+
+    // cytonBLE.on(k.OBCIEmitterRawDataPacket, console.log);
 
   });
 

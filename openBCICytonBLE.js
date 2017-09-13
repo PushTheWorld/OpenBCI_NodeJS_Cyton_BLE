@@ -100,6 +100,7 @@ function CytonBLE (options, callback) {
   this._connected = false;
   this._localName = null;
   this._multiPacketBuffer = null;
+  this._packetCounter = 0;
   this._peripheral = null;
   this._rawDataPacketToSample = k.rawDataToSampleObjectDefault(k.numberOfChannelsForBoardType(k.OBCIBoardCytonBLE));
   this._rawDataPacketToSample.scale = !this.options.sendCounts;
@@ -949,6 +950,7 @@ CytonBLE.prototype._nobleScanStop = function () {
 CytonBLE.prototype._processBytes = function (data) {
   if (this.options.debug) obciDebug.debugBytes('<<', data);
   this.lastPacket = data;
+  this._packetCounter++;
   const rawDataPackets = obciUtils.extractRawBLEDataPackets(data);
 
   _.forEach(rawDataPackets, (rawDataPacket) => {
