@@ -1,101 +1,141 @@
-[![Join the chat at https://gitter.im/OpenBCI/OpenBCI_NodeJS](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/OpenBCI/OpenBCI_NodeJS?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://travis-ci.org/OpenBCI/OpenBCI_NodeJS_Ganglion.svg?branch=master)](https://travis-ci.org/OpenBCI/OpenBCI_NodeJS_Ganglion)
-[![codecov](https://codecov.io/gh/OpenBCI/OpenBCI_NodeJS_Ganglion/branch/master/graph/badge.svg)](https://codecov.io/gh/OpenBCI/OpenBCI_NodeJS_Ganglion)
-[![Dependency Status](https://david-dm.org/OpenBCI/OpenBCI_NodeJS_Ganglion.svg)](https://david-dm.org/OpenBCI/OpenBCI_NodeJS_Ganglion)
-[![npm](https://img.shields.io/npm/dm/openbci-ganglion.svg?maxAge=2592000)](http://npmjs.com/package/openbci-ganglion)
-[![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/Flet/semistandard)
+# OpenBCI Cyton BLE NodeJS SDK
 
-# OpenBCI Node.js Ganglion SDK
+<p align="center">
+  <img alt="banner" src="/images/WiFi_front_product.jpg/" width="600">
+</p>
+<p align="center" href="">
+  Prove the Cyton over BLE instead of Gazell stack
+</p>
 
-A Node.js module for OpenBCI ~ written with love by [Push The World!](http://www.pushtheworldllc.com)
+## Welcome!
 
-We are proud to support all functionality of the Ganglion (4 channel). Push The World is actively developing and maintaining this module.
+First and foremost, Welcome! :tada: Willkommen! :confetti_ball: Bienvenue! :balloon::balloon::balloon:
 
-The purpose of this module is to **get connected** and **start streaming** as fast as possible.
+Thank you for visiting the OpenBCI Cyton BLE NodeJS SDK repository.
+
+This document (the README file) is a hub to give you some information about the project. Jump straight to one of the sections below, or just scroll down to find out more.
+
+* [What are we doing? (And why?)](#what-are-we-doing)
+* [Who are we?](#who-are-we)
+* [What do we need?](#what-do-we-need)
+* [How can you get involved?](#get-involved)
+* [Get in touch](#contact-us)
+* [Find out more](#find-out-more)
+* [Understand the jargon](#glossary)
+
+## What are we doing?
+
+### The problem
+
+* People have to use a dongle to get data from the Cyton
+* People can't send data from the Cyton to the web browser :sad_face:
+* There is a BLE switch on the Cyton that is doing nothing!
+
+So, these problems add up to limit the amount of devices the cyton can stream it's high quality data to, and that's sad.
+
+### The solution
+
+The OpenBCI Cyton BLE NodeJS SDK will:
+
+* Find, connect, sync, and configure the Cyton over BLE
+* Send two channels of EEG data uncompressed to the client
+
+Using BLE allows for every modern day computer to get data from the Cyton.
+
+## Who are we?
+
+The author of the OpenBCI Cyton BLE NodeJS SDK is [AJ Keller][link_aj_keller] and he was sponsored by [NEBA Health, LLC][link_neba]. We are in search of a reliable BLE driver to really get this project going! We used this repo to test the firmware we were writing.
+
+## What do we need?
+
+**You**! In whatever way you can help.
+
+We need expertise in programming, user experience, software sustainability, documentation and technical writing and project management.
+
+We'd love your feedback along the way.
+
+Our primary goal is to prove the Cyton works over BLE instead of the Gazell stack and we're excited to support the professional development of any and all of our contributors. If you're looking to learn to code, try out working collaboratively, or translate you skills to the digital domain, we're here to help.
+
+## Get involved
+
+If you think you can help in any of the areas listed above (and we bet you can) or in any of the many areas that we haven't yet thought of (and here we're *sure* you can) then please check out our [contributors' guidelines](CONTRIBUTING.md) and our [roadmap](ROADMAP.md).
+
+Please note that it's very important to us that we maintain a positive and supportive environment for everyone who wants to participate. When you join us we ask that you follow our [code of conduct](CODE_OF_CONDUCT.md) in all interactions both on and offline.
+
+## Contact us
+
+If you want to report a problem or suggest an enhancement we'd love for you to [open an issue](../../issues) at this github repository because then we can get right on it. But you can also contact [AJ][link_aj_keller] by email (pushtheworldllc AT gmail DOT com) or on [twitter](https://twitter.com/aj-ptw).
+
+You can also hang out, ask questions and share stories in the [OpenBCI NodeJS room](https://gitter.im/OpenBCI/OpenBCI_NodeJS?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) on Gitter.
+
+## Find out more
+
+You might be interested in:
+
+* Check out [NEBA Health, LLC][link_neba]
+* Purchase an OpenBCI [WiFi Shield][link_shop_wifi]
+* A NodeJS example: [cytonBLEServer.js][link_cyton_ble_server]
+
+And of course, you'll want to know our:
+
+* [Contributors' guidelines](CONTRIBUTING.md)
+* [Roadmap](ROADMAP.md)
+
+## Thank you
+
+Thank you so much (Danke schön! Merci beaucoup!) for visiting the project and we do hope that you'll join us on this amazing journey to make programming with OpenBCI fun and easy.
+
+# Documentation
 
 ### Table of Contents:
 ---
 
-1. [TL;DR](#tldr)
-2. [Prerequisites](#prerequisites)
-3. [Installation](#install)
-4. [Ganglion](#ganglion)
-  2. [General Overview](#general-overview)
-  3. [SDK Reference Guide](#sdk-reference-guide)
-    * [Constructor](#constructor)
-    * [Methods](#method)
-    * [Events](#event)
-    * [Constants](#constants)
-6. [Interfacing With Other Tools](#interfacing-with-other-tools)
-7. [Developing](#developing)
-8. [Testing](#developing-testing)
-9. [Contribute](#contribute)
-10. [License](#license)
-11. [Roadmap](#roadmap)
+1. [Installation](#install)
+2. [TL;DR](#tldr)
+3. [WiFi](#wifi-docs)
+  1. [General Overview](#general-overview)
+  2. [Classes](#classes)
+4. [Developing](#developing)
+5. [Testing](#developing-testing)
+6. [Contribute](#contribute)
+7. [License](#license)
 
-## <a name="tldr"></a> TL;DR:
-Get connected and start streaming right now
 
-```js
-const Ganglion = require('openbci-ganglion').Ganglion;
-const ganglion = new Ganglion();
-ganglion.once('ganglionFound', (peripheral) => {
-  // Stop searching for BLE devices once a ganglion is found.
-  ganglion.searchStop();
-  ganglion.on('sample', (sample) => {
-    /** Work with sample */
-    console.log(sample.sampleNumber);
-    for (let i = 0; i < ganglion.numberOfChannels(); i++) {
-      console.log("Channel " + (i + 1) + ": " + sample.channelData[i].toFixed(8) + " Volts.");
-    }
-  });
-  ganglion.once('ready', () => {
-    ganglion.streamStart();
-  });
-  ganglion.connect(peripheral);
+### <a name="install"></a> Installation:
+```
+npm install openbci-wifi
+```
+
+### <a name="tldr"></a> TL;DR:
+Get connected and [start streaming right now with the example code](examples/getStreaming/getStreaming.js).
+
+```ecmascript 6
+const Wifi = require('openbci-wifi');
+let wifi = new Wifi({
+  debug: false,
+  verbose: true,
+  latency: 10000
 });
-// Start scanning for BLE devices
-ganglion.searchStart();
+
+wifi.on(k.OBCIEmitterSample, (sample) => {
+  for (let i = 0; i < wifi.getNumberOfChannels(); i++) {
+    console.log("Channel " + (i + 1) + ": " + sample.channelData[i].toFixed(8) + " Volts.");
+     // prints to the console
+     //  "Channel 1: 0.00001987 Volts."
+     //  "Channel 2: 0.00002255 Volts."
+     //  ...
+     //  "Channel 8: -0.00001875 Volts."
+  }
+});
+
+wifi.searchToStream({
+    sampleRate: 1000 // Custom sample rate
+    shieldName: 'OpenBCI-2C34', // Enter the unique name for your wifi shield
+    streamStart: true // Call to start streaming in this function
+  }).catch(console.log);
 ```
 
-## <a name="prerequisites"></a> Prerequisites:
-
-Please ensure [Python 2.7 is installed](https://www.python.org/downloads/) for all OS.
-
-### macOS
-
- * install [Xcode](https://itunes.apple.com/ca/app/xcode/id497799835?mt=12)
-
-### Linux
-
- * Kernel version 3.6 or above
- * ```libbluetooth-dev```
-
-### Windows 8+
-
- * [node-gyp requirements for Windows](https://github.com/TooTallNate/node-gyp#installation)
-   * Python 2.7
-   * Visual Studio ([Express](https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx))
- * [node-bluetooth-hci-socket prerequisites](https://github.com/sandeepmistry/node-bluetooth-hci-socket#windows)
-   * Compatible Bluetooth 4.0 USB adapter
-   * [WinUSB](https://msdn.microsoft.com/en-ca/library/windows/hardware/ff540196(v=vs.85).aspx) driver setup for Bluetooth 4.0 USB adapter, using [Zadig tool](http://zadig.akeo.ie/)
-
-See [@don](https://github.com/don)'s set up guide on [Bluetooth LE with Node.js and Noble on Windows](https://www.youtube.com/watch?v=mL9B8wuEdms).
-
-
-## <a name="install"></a> Installation:
-Install from npm:
-```
-npm install openbci-ganglion
-```
-
-## <a name="about"></a> About:
-
-The Ganglion driver used by OpenBCI's Processing GUI and Electron Hub.
-
-Check out the [**_automatic_** tests](https://codecov.io/gh/OpenBCI/OpenBCI_NodeJS_Ganglion) written for it!
-
-## <a name="general-overview"></a> General Overview:
+## <a name="general-overview"></a> General Overview
 
 Initialization
 --------------
@@ -103,485 +143,433 @@ Initialization
 Initializing the board:
 
 ```js
-const Ganglion = require('openbci-ganglion').Ganglion;
-const ganglion = new Ganglion();
+const Wifi = require('openbci-wifi');
+const ourBoard = new Wifi();
 ```
+Go [checkout out the get streaming example](examples/getStreaming/getStreaming.js)!
 
 For initializing with options, such as verbose print outs:
 
 ```js
-const Ganglion = require('openbci-ganglion').Ganglion;
-const ourBoard = new Ganglion({
+const Wifi = require('openbci-wifi');
+const wifi = new Wifi({
   verbose: true
 });
 ```
 
-For initializing with callback, such as to catch errors on `noble` startup:
-
+or if you are using ES6:
 ```js
-const Ganglion = require('openbci-ganglion').Ganglion;
-const ourBoard = new Ganglion((error) => {
-  if (error) {
-    console.log("error", error);  
-  } else {
-    console.log("no error");
-  }
-});
-```
-For initializing with options and callback, such as verbose and to catch errors on `noble` startup:
-
-```js
-const Ganglion = require('openbci-ganglion').Ganglion;
-const ourBoard = new Ganglion({
-  verbose: true
-},(error) => {
-  if (error) {
-    console.log("error", error);  
-  } else {
-    console.log("no error");
-  }
-});
+import Wifi from 'openbci-wifi';
+import { Constants } from 'openbci-utilities';
+const wifi = new Wifi();
+wifi.connect("OpenBCI-2114");
 ```
 
-
-'ready' event
-------------
-
-You MUST wait for the 'ready' event to be emitted before streaming/talking with the board. The ready happens asynchronously
-so installing the 'sample' listener and writing before the ready event might result in... nothing at all.
-
+To debug, it's amazing, do:
 ```js
-const Ganglion = require('openbci-ganglion').Ganglion;
-const ourBoard = new Ganglion();
-ourBoard.connect(portName).then(function(boardSerial) {
-    ourBoard.on('ready',function() {
-        /** Start streaming, reading registers, what ever your heart desires  */
-    });
-}).catch(function(err) {
-    /** Handle connection errors */
-});            
+const Wifi = require('openbci-wifi');
+const wifi = new Wifi({
+    debug: true
+});
 ```
 
 Sample properties:
 ------------------
+* `startByte` (`Number` should be `0xA0`)
 * `sampleNumber` (a `Number` between 0-255)
-* `channelData` (channel data indexed at 0 filled with floating point `Numbers` in Volts)
-* `accelData` (`Array` with X, Y, Z accelerometer values when new data available)
+* `channelData` (channel data indexed at 0 filled with floating point `Numbers` in Volts) if `sendCounts` is false
+* `channelDataCounts` (channel data indexed at 0 filled with floating point `Numbers` in Volts) if `sendCounts` is true
+* `accelData` (`Array` with X, Y, Z accelerometer values when new data available) if `sendCounts` is false
+* `accelDataCounts` (`Array` with X, Y, Z accelerometer values when new data available) Only present if `sendCounts` is true
+* `auxData` (`Buffer` filled with either 2 bytes (if time synced) or 6 bytes (not time synced))
+* `stopByte` (`Number` should be `0xCx` where x is 0-15 in hex)
+* `boardTime` (`Number` the raw board time)
 * `timeStamp` (`Number` the `boardTime` plus the NTP calculated offset)
 
 The power of this module is in using the sample emitter, to be provided with samples to do with as you wish.
 
-To get a ['sample'](#event-sample) event, you need to:
+To get a 'sample' event, you need to:
 -------------------------------------
-1. Call [`.connect(localName | peripheral)`](#method-connect)
-2. Install the ['ready'](#event-ready) event emitter on resolved promise
-3. In callback for ['ready'](#event-ready) emitter, call [`streamStart()`](#method-stream-start)
-4. Install the ['sample'](#event-sample) event emitter
+1. Install the 'sample' event emitter
+2. Call [`.searchToStream(_options_)`](#Wifi-connect)
 ```js
-const Ganglion = require('openbci-ganglion').Ganglion;
-const ourBoard = new Ganglion();
-ourBoard.connect(localName).then(function() {
-    ourBoard.on('ready',function() {
-        ourBoard.streamStart();
-        ourBoard.on('sample',function(sample) {
-            /** Work with sample */
-        });
-    });
-}).catch(function(err) {
-    /** Handle connection errors */
-});            
+const Wifi = require('openbci-wifi');
+let wifi = new Wifi({
+  debug: false,
+  verbose: true,
+  latency: 10000
+});
+
+wifi.on(k.OBCIEmitterSample, (sample) => {
+  for (let i = 0; i < wifi.getNumberOfChannels(); i++) {
+    console.log("Channel " + (i + 1) + ": " + sample.channelData[i].toFixed(8) + " Volts.");
+     // prints to the console
+     //  "Channel 1: 0.00001987 Volts."
+     //  "Channel 2: 0.00002255 Volts."
+     //  ...
+     //  "Channel 8: -0.00001875 Volts."
+  }
+});
+
+wifi.searchToStream({
+    sampleRate: 1000 // Custom sample rate
+    shieldName: 'OpenBCI-2C34', // Enter the unique name for your wifi shield
+    streamStart: true // Call to start streaming in this function
+  }).catch(console.log);
 ```
-Close the connection with [`.streamStop()`](#method-stream-stop) and disconnect with [`.disconnect()`](#method-disconnect)
+Close the connection with [`.streamStop()`](#Wifi+streamStop) and disconnect with [`.disconnect()`](#Wifi+disconnect)
 ```js
-const Ganglion = require('openbci-ganglion').Ganglion;
-const ourBoard = new Ganglion();
-ourBoard.streamStop().then(ourBoard.disconnect());
+const Wifi = require('openbci-wifi');
+const wifi = new Wifi();
+wifi.streamStop().then(wifi.disconnect());
 ```
 
-See Reference Guide for a complete list of impedance tests.
+## Classes
 
-## <a name="sdk-reference-guide"></a> SDK Reference Guide:
----------------
-### <a name="constructor"></a> Constructor:
+<dl>
+<dt><a href="#CytonBLE">CytonBLE</a></dt>
+<dd></dd>
+</dl>
 
-#### <a name="init"></a> Ganglion (options, callback)
+## Typedefs
 
-Create new instance of a Ganglion board.
+<dl>
+<dt><a href="#InitializationObject">InitializationObject</a> : <code>Object</code></dt>
+<dd><p>Board optional configurations.</p>
+</dd>
+</dl>
 
-**_options (optional)_**
+<a name="CytonBLE"></a>
 
-Board optional configurations.
+## CytonBLE
+**Kind**: global class
+**Author**: AJ Keller (@pushtheworldllc)
 
-* `debug` {Boolean} - Print out a raw dump of bytes sent and received (Default `false`)
-* `nobleAutoStart` {Boolean} - Automatically initialize `noble`. Subscribes to blue tooth state changes and such. (Default `true`)
-* `nobleScanOnPowerOn` {Boolean} - Start scanning for Ganglion BLE devices as soon as power turns on.  (Default `true`)
-* `sendCounts` {Boolean} - Send integer raw counts instead of scaled floats. (Default `false`)
-* `simulate` {Boolean} - Full functionality, just mock data. Must attach Daisy module by setting `simulatorDaisyModuleAttached` to `true` in order to get 16 channels. (Default `false`)
-* `simulatorBoardFailure` {Boolean} - Simulates board communications failure. This occurs when the RFduino on the board is not polling the RFduino on the dongle. (Default `false`)
-* `simulatorHasAccelerometer` - {Boolean} - Sets simulator to send packets with accelerometer data. (Default `true`)
-* `simulatorInjectAlpha` - {Boolean} - Inject a 10Hz alpha wave in Channels 1 and 2 (Default `true`)
-* `simulatorInjectLineNoise` {String} - Injects line noise on channels. (3 Possible Options)
-  * `60Hz` - 60Hz line noise (Default) [America]
-  * `50Hz` - 50Hz line noise [Europe]
-  * `none` - Do not inject line noise.
-* `simulatorSampleRate` {Number} - The sample rate to use for the simulator. Simulator will set to 125 if `simulatorDaisyModuleAttached` is set `true`. However, setting this option overrides that setting and this sample rate will be used. (Default is `250`)
-* `verbose` {Boolean} - Print out useful debugging events (Default `false`)
+* [CytonBLE](#CytonBLE)
+    * [new CytonBLE(options, callback)](#new_CytonBLE_new)
+    * _instance_
+        * [.options](#CytonBLE+options) : [<code>InitializationObject</code>](#InitializationObject)
+        * [._accelArray](#CytonBLE+_accelArray)
+        * [.impedanceTest](#CytonBLE+impedanceTest)
+        * [.autoReconnect()](#CytonBLE+autoReconnect)
+        * [.channelOff(channelNumber)](#CytonBLE+channelOff) ⇒ <code>Promise.&lt;T&gt;</code>
+        * [.channelOn(channelNumber)](#CytonBLE+channelOn) ⇒ <code>Promise.&lt;T&gt;</code> \| <code>\*</code>
+        * [.connect(id)](#CytonBLE+connect) ⇒ <code>Promise</code>
+        * [.destroyNoble()](#CytonBLE+destroyNoble)
+        * [.destroyMultiPacketBuffer()](#CytonBLE+destroyMultiPacketBuffer)
+        * [.disconnect(stopStreaming)](#CytonBLE+disconnect) ⇒ <code>Promise</code>
+        * [.getLocalName()](#CytonBLE+getLocalName) ⇒ <code>null</code> \| <code>String</code>
+        * [.getMutliPacketBuffer()](#CytonBLE+getMutliPacketBuffer) ⇒ <code>null</code> \| <code>Buffer</code>
+        * [.impedanceTestChannel(channelNumber)](#CytonBLE+impedanceTestChannel) ⇒ <code>Promise</code>
+        * [.impedanceTestChannelInputP(channelNumber)](#CytonBLE+impedanceTestChannelInputP) ⇒ <code>Promise</code>
+        * [.impedanceTestChannelInputN(channelNumber)](#CytonBLE+impedanceTestChannelInputN) ⇒ <code>Promise</code>
+        * [.impedanceTestChannels(arrayOfChannels)](#CytonBLE+impedanceTestChannels) ⇒ <code>Promise</code>
+        * [.isConnected()](#CytonBLE+isConnected) ⇒ <code>boolean</code>
+        * [.isNobleReady()](#CytonBLE+isNobleReady) ⇒ <code>boolean</code>
+        * [.isSearching()](#CytonBLE+isSearching) ⇒ <code>boolean</code>
+        * [.isStreaming()](#CytonBLE+isStreaming) ⇒ <code>boolean</code>
+        * [.numberOfChannels()](#CytonBLE+numberOfChannels) ⇒ <code>Number</code>
+        * [.sampleRate()](#CytonBLE+sampleRate) ⇒ <code>Number</code>
+        * [.searchStart(&#x60;maxSearchTime&#x60;)](#CytonBLE+searchStart) ⇒ <code>Promise</code>
+        * [.searchStop()](#CytonBLE+searchStop) ⇒ <code>global.Promise</code> \| <code>Promise</code>
+        * [.softReset()](#CytonBLE+softReset) ⇒ <code>Promise</code>
+        * [.streamStart()](#CytonBLE+streamStart) ⇒ <code>Promise</code>
+        * [.streamStop()](#CytonBLE+streamStop) ⇒ <code>Promise</code>
+        * [.write(data)](#CytonBLE+write) ⇒ <code>Promise</code>
+    * _inner_
+        * [~o](#CytonBLE..o)
 
-**Note, we have added support for either all lowercase OR camel case for the options, use whichever style you prefer.**
+<a name="new_CytonBLE_new"></a>
 
-**_callback (optional)_**
+### new CytonBLE(options, callback)
+The initialization method to call first, before any other method.
 
-Callback function to catch errors. Returns only error if an error was encountered.
 
-### <a name="methods"></a> Methods:
+| Param | Type | Description |
+| --- | --- | --- |
+| options | [<code>InitializationObject</code>](#InitializationObject) | (optional) - Board optional configurations. |
+| callback | <code>function</code> | (optional) - A callback function used to determine if the noble module was able to be started.    This can be very useful on Windows when there is no compatible BLE device found. |
 
-#### <a name="method-accel-start"></a> .accelStart()
+<a name="CytonBLE+options"></a>
 
-Used to enable the accelerometer. Will result in accelerometer packets arriving 10 times a second.
+### cytonBLE.options : [<code>InitializationObject</code>](#InitializationObject)
+**Kind**: instance property of [<code>CytonBLE</code>](#CytonBLE)
+<a name="CytonBLE+_accelArray"></a>
 
-**Note that the accelerometer is enabled by default.**
+### cytonBLE._accelArray
+Private Properties (keep alphabetical)
 
-**_Returns_** {Promise} - fulfilled once the command was sent to the board.
+**Kind**: instance property of [<code>CytonBLE</code>](#CytonBLE)
+<a name="CytonBLE+impedanceTest"></a>
 
-#### <a name="method-accel-stop"></a> .accelStop()
+### cytonBLE.impedanceTest
+Public Properties (keep alphabetical)
 
-Used to disable the accelerometer. Prevents accelerometer data packets from arriving.
+**Kind**: instance property of [<code>CytonBLE</code>](#CytonBLE)
+<a name="CytonBLE+autoReconnect"></a>
 
-**Note that the accelerometer is enabled by default.**
-
-**_Returns_** {Promise} - fulfilled once the command was sent to the board.
-
-#### <a name="method-auto-reconnect"></a> .autoReconnect()
-
+### cytonBLE.autoReconnect()
 Used to start a scan if power is on. Useful if a connection is dropped.
 
-#### <a name="method-channel-off"></a> .channelOff(channelNumber)
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+<a name="CytonBLE+channelOff"></a>
 
-Turn off a specified channel
+### cytonBLE.channelOff(channelNumber) ⇒ <code>Promise.&lt;T&gt;</code>
+Send a command to the board to turn a specified channel off
 
-**_channelNumber_**
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Author**: AJ Keller (@pushtheworldllc)
 
-A number (1-4) specifying which channel you want to turn off.
+| Param |
+| --- |
+| channelNumber |
 
-**_Returns_** {Promise} - fulfilled once the command was sent to the board.
+<a name="CytonBLE+channelOn"></a>
 
-#### <a name="method-channel-on"></a> .channelOn(channelNumber)
+### cytonBLE.channelOn(channelNumber) ⇒ <code>Promise.&lt;T&gt;</code> \| <code>\*</code>
+Send a command to the board to turn a specified channel on
 
-Turn on a specified channel
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Author**: AJ Keller (@pushtheworldllc)
 
-**_channelNumber_**
+| Param |
+| --- |
+| channelNumber |
 
-A number (1-4) specifying which channel you want to turn on.
+<a name="CytonBLE+connect"></a>
 
-**_Returns_** {Promise} - fulfilled once the command was sent to the board.
+### cytonBLE.connect(id) ⇒ <code>Promise</code>
+The essential precursor method to be called initially to establish a
+             ble connection to the OpenBCI ganglion board.
 
-#### <a name="method-connect"></a> .connect(portName)
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Promise</code> - If the board was able to connect.
+**Author**: AJ Keller (@pushtheworldllc)
 
-The essential precursor method to be called initially to establish a ble connection to the OpenBCI ganglion board.
+| Param | Type | Description |
+| --- | --- | --- |
+| id | <code>String</code> \| <code>Object</code> | a string local name or peripheral object |
 
-**_id_** {String | Object}
+<a name="CytonBLE+destroyNoble"></a>
 
-A string `localName` or [`peripheral`](https://github.com/sandeepmistry/noble#peripheral) (from [`noble`](https://github.com/sandeepmistry/noble)) object.
+### cytonBLE.destroyNoble()
+Destroys the noble!
 
-**_Returns_** {Promise} - fulfilled by a successful connection to the board.
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+<a name="CytonBLE+destroyMultiPacketBuffer"></a>
 
-#### <a name="method-destroy-multi-packet-buffer"></a> .destroyMultiPacketBuffer()
+### cytonBLE.destroyMultiPacketBuffer()
+Destroys the multi packet buffer.
 
-Destroys the multi packet buffer. The mulit packet buffer holds data from the multi packet messages.
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+<a name="CytonBLE+disconnect"></a>
 
-#### <a name="method-disconnect"></a> .disconnect(stopStreaming)
+### cytonBLE.disconnect(stopStreaming) ⇒ <code>Promise</code>
+Closes the connection to the board. Waits for stop streaming command to
+ be sent if currently streaming.
 
-Closes the connection to the board. Waits for stop streaming command to be sent if currently streaming.
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Promise</code> - - fulfilled by a successful close, rejected otherwise.
+**Author**: AJ Keller (@pushtheworldllc)
 
-**_stopStreaming_** {Boolean} (optional)
+| Param | Type | Description |
+| --- | --- | --- |
+| stopStreaming | <code>Boolean</code> | (optional) - True if you want to stop streaming before disconnecting. |
 
-`true` if you want to stop streaming before disconnecting. (Default `false`)
+<a name="CytonBLE+getLocalName"></a>
 
-**_Returns_** {Promise} - fulfilled by a successful close, rejected otherwise.
+### cytonBLE.getLocalName() ⇒ <code>null</code> \| <code>String</code>
+Return the local name of the attached CytonBLE device.
 
-#### <a name="method-get-local-name"></a> .getLocalName()
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+<a name="CytonBLE+getMutliPacketBuffer"></a>
 
-Gets the local name of the attached Ganglion device. This is only valid after [`.connect()`](#method-connect)
-
-**_Returns_** {null|String} - The local name.
-
-#### <a name="method-get-mutli-packet-buffer"></a> .getMutliPacketBuffer()
-
+### cytonBLE.getMutliPacketBuffer() ⇒ <code>null</code> \| <code>Buffer</code>
 Get's the multi packet buffer.
 
-**_Returns_** {null|Buffer} - Can be null if no multi packets received.
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>null</code> \| <code>Buffer</code> - - Can be null if no multi packets received.
+<a name="CytonBLE+impedanceTestChannel"></a>
 
-#### <a name="method-impedance-start"></a> .impedanceStart()
+### cytonBLE.impedanceTestChannel(channelNumber) ⇒ <code>Promise</code>
+Run a complete impedance test on a single channel, applying the test signal individually to P & N inputs.
 
-Call to start testing impedance.
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Promise</code> - - Fulfilled with a single channel impedance object.
+**Author**: AJ Keller (@pushtheworldllc)
 
-**_Returns_** {Promise} - that fulfills when all the commands are sent to the board.
+| Param | Description |
+| --- | --- |
+| channelNumber | A Number, specifies which channel you want to test. |
 
-#### <a name="method-impedance-stop"></a> .impedanceStop()
+<a name="CytonBLE+impedanceTestChannelInputP"></a>
 
-Call to stop testing impedance.
+### cytonBLE.impedanceTestChannelInputP(channelNumber) ⇒ <code>Promise</code>
+Run impedance test on a single channel, applying the test signal only to P input.
 
-**_Returns_** {Promise} - that fulfills when all the commands are sent to the board.
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Promise</code> - - Fulfilled with a single channel impedance object.
+**Author**: AJ Keller (@pushtheworldllc)
 
-#### <a name="method-is-connected"></a> .isConnected()
+| Param | Description |
+| --- | --- |
+| channelNumber | A Number, specifies which channel you want to test. |
 
+<a name="CytonBLE+impedanceTestChannelInputN"></a>
+
+### cytonBLE.impedanceTestChannelInputN(channelNumber) ⇒ <code>Promise</code>
+Run impedance test on a single channel, applying the test signal to N input.
+
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Promise</code> - - Fulfilled with a single channel impedance object.
+**Author**: AJ Keller (@pushtheworldllc)
+
+| Param | Description |
+| --- | --- |
+| channelNumber | A Number, specifies which channel you want to test. |
+
+<a name="CytonBLE+impedanceTestChannels"></a>
+
+### cytonBLE.impedanceTestChannels(arrayOfChannels) ⇒ <code>Promise</code>
+To test specific input configurations of channels!
+
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Promise</code> - - Fulfilled with a loaded impedance object.
+**Author**: AJ Keller (@pushtheworldllc)
+
+| Param | Description |
+| --- | --- |
+| arrayOfChannels | The array of configurations where:              'p' or 'P' is only test P input              'n' or 'N' is only test N input              'b' or 'B' is test both inputs (takes 66% longer to run)              '-' to ignore channel      EXAMPLE:          For 8 channel board: ['-','N','n','p','P','-','b','b']              (Note: it doesn't matter if capitalized or not) |
+
+<a name="CytonBLE+isConnected"></a>
+
+### cytonBLE.isConnected() ⇒ <code>boolean</code>
 Checks if the driver is connected to a board.
 
-**_Returns_** {Boolean} - true if connected
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>boolean</code> - - True if connected.
+<a name="CytonBLE+isNobleReady"></a>
 
-#### <a name="method-is-noble-ready"></a> .isNobleReady()
+### cytonBLE.isNobleReady() ⇒ <code>boolean</code>
+Checks if bluetooth is powered on.
 
-Checks if bluetooth is powered on. Cannot start scanning till this is true.
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>boolean</code> - - True if bluetooth is powered on.
+<a name="CytonBLE+isSearching"></a>
 
-**_Returns_** {Boolean} - true if bluetooth is powered on.
+### cytonBLE.isSearching() ⇒ <code>boolean</code>
+Checks if noble is currently scanning.
 
-#### <a name="method-is-searching"></a> .isSearching()
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>boolean</code> - - True if streaming.
+<a name="CytonBLE+isStreaming"></a>
 
-Checks if noble is currently scanning. See [`.searchStart()`](#method-search-start) and [`.searchStop`()`](#method-search-stop`)
-
-**_Returns_** {Boolean} - true if searching.
-
-#### <a name="method-is-streaming"></a> .isStreaming()
-
+### cytonBLE.isStreaming() ⇒ <code>boolean</code>
 Checks if the board is currently sending samples.
 
-**_Returns_** {Boolean} - true if streaming
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>boolean</code> - - True if streaming.
+<a name="CytonBLE+numberOfChannels"></a>
 
-#### <a name="method-number-of-channels"></a> .numberOfChannels()
+### cytonBLE.numberOfChannels() ⇒ <code>Number</code>
+This function is used as a convenience method to determine how many
+             channels the current board is using.
 
-Get the current number of channels available to use. (i.e. 4).
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Number</code> - A number
+Note: This is dependent on if you configured the board correctly on setup options
+**Author**: AJ Keller (@pushtheworldllc)
+<a name="CytonBLE+sampleRate"></a>
 
-**_Returns_** {Number} - The total number of available channels.
+### cytonBLE.sampleRate() ⇒ <code>Number</code>
+Get the the current sample rate is.
 
-#### <a name="method-print-register-settings"></a> .printRegisterSettings()
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Number</code> - The sample rate
+Note: This is dependent on if you configured the board correctly on setup options
+<a name="CytonBLE+searchStart"></a>
 
-Prints all register settings for the for board.
+### cytonBLE.searchStart(&#x60;maxSearchTime&#x60;) ⇒ <code>Promise</code>
+List available peripherals so the user can choose a device when not
+             automatically found.
 
-**_Returns_** {Promise} - Fulfilled if the command was sent to board.
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Promise</code> - - If scan was started
 
-#### <a name="method-sample-rate"></a> .sampleRate()
+| Param | Type | Description |
+| --- | --- | --- |
+| `maxSearchTime` | <code>Number</code> | The amount of time to spend searching. (Default is 20 seconds) |
 
-Get the current sample rate.
+<a name="CytonBLE+searchStop"></a>
 
-**Note: This is dependent on if you configured the board correctly on setup options. Specifically as a daisy.**
+### cytonBLE.searchStop() ⇒ <code>global.Promise</code> \| <code>Promise</code>
+Called to end a search.
 
-**_Returns_** {Number} - The current sample rate.
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+<a name="CytonBLE+softReset"></a>
 
-#### <a name="method-search-start"></a> .searchStart()
+### cytonBLE.softReset() ⇒ <code>Promise</code>
+Sends a soft reset command to the board
 
-Call to make `noble` start scanning for Ganglions.
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Promise</code> - - Fulfilled if the command was sent to board.
+**Author**: AJ Keller (@pushtheworldllc)
+<a name="CytonBLE+streamStart"></a>
 
-**_maxSearchTime_** {Number}
-
-The amount of time to spend searching. (Default is 20 seconds)
-
-**_Returns_** {Promise} - fulfilled if scan was started.
-
-#### <a name="method-search-stop"></a> .searchStop()
-
-Call to make `noble` stop scanning for Ganglions.
-
-**_Returns_** {Promise} - fulfilled if scan was stopped.
-
-#### <a name="method-soft-reset"></a> .softReset()
-
-Sends a soft reset command to the board.
-
-**_Returns_** {Promise} - Fulfilled if the command was sent to board.
-
-#### <a name="method-stream-start"></a> .streamStart()
-
+### cytonBLE.streamStart() ⇒ <code>Promise</code>
 Sends a start streaming command to the board.
 
-**Note, You must have called and fulfilled [`.connect()`](#method-connect) AND observed a `'ready'` emitter before calling this method.**
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Promise</code> - indicating if the signal was able to be sent.
+Note: You must have successfully connected to an OpenBCI board using the connect
+          method. Just because the signal was able to be sent to the board, does not
+          mean the board will start streaming.
+**Author**: AJ Keller (@pushtheworldllc)
+<a name="CytonBLE+streamStop"></a>
 
-**_Returns_** {Promise} - fulfilled if the command was sent.
-
-#### <a name="method-stream-stop"></a> .streamStop()
-
+### cytonBLE.streamStop() ⇒ <code>Promise</code>
 Sends a stop streaming command to the board.
 
-**Note, You must have called and fulfilled [`.connect()`](#method-connect) AND observed a `'ready'` emitter before calling this method.**
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Promise</code> - indicating if the signal was able to be sent.
+Note: You must have successfully connected to an OpenBCI board using the connect
+          method. Just because the signal was able to be sent to the board, does not
+          mean the board stopped streaming.
+**Author**: AJ Keller (@pushtheworldllc)
+<a name="CytonBLE+write"></a>
 
-**_Returns_** {Promise} - fulfilled if the command was sent.
-
-#### <a name="method-synthetic-enable"></a> .syntheticEnable()
-
-Puts the board in synthetic data generation mode. Must call streamStart still.
-
-**_Returns_** {Promise} - fulfilled if the command was sent.
-
-#### <a name="method-synthetic-disable"></a> .syntheticDisable()
-
-Puts the board in synthetic data generation mode. Must call streamStart still.
-
-**_Returns_** {Promise} - Indicating if the command was sent.
-
-#### <a name="method-write"></a> .write(data)
-
+### cytonBLE.write(data) ⇒ <code>Promise</code>
 Used to send data to the board.
 
-**_data_** {Array | Buffer | Number | String}
+**Kind**: instance method of [<code>CytonBLE</code>](#CytonBLE)
+**Returns**: <code>Promise</code> - - fulfilled if command was able to be sent
+**Author**: AJ Keller (@pushtheworldllc)
 
-The data to write out.
+| Param | Type | Description |
+| --- | --- | --- |
+| data | <code>Array</code> \| <code>Buffer</code> \| <code>Buffer2</code> \| <code>Number</code> \| <code>String</code> | The data to write out |
 
-**_Returns_** {Promise} - fulfilled if command was able to be sent.
+<a name="CytonBLE..o"></a>
 
-**Example**
+### CytonBLE~o
+Configuring Options
 
-Sends a single character command to the board.
-```js
-// ourBoard has fulfilled the promise on .connect() and 'ready' has been observed previously
-ourBoard.write('a');
-```
+**Kind**: inner property of [<code>CytonBLE</code>](#CytonBLE)
+<a name="InitializationObject"></a>
 
-Sends an array of bytes
-```js
-// ourBoard has fulfilled the promise on .connect() and 'ready' has been observed previously
-ourBoard.write(['x','0','1','0','0','0','0','0','0','X']);
-```
+## InitializationObject : <code>Object</code>
+Board optional configurations.
 
-Call crazy? Go for it...
-```js
-ourBoard.write('t');
-ourBoard.write('a');
-ourBoard.write('c');
-ourBoard.write('o');
-```
+**Kind**: global typedef
+**Properties**
 
-### <a name="event"></a> Events:
-
-#### <a name="event-accelerometer"></a> .on('accelerometer', callback)
-
-Emitted when the module receives accelerometer data.
-
-Returns an object with properties:
-
-**_accelData_** {Array}
-
-Array of floats for each dimension in g's.
-
-**NOTE:** Only present if `sendCounts` is `true`.
-
-**_accelDataCounts_** {Array}
-
-Array of integers for each dimension in counts.
-
-**NOTE:** Only present if `sendCounts` is `false`.
-
-Example (if `sendCounts` is `false`):
-```json
-{
-  "accelData": [0.0, 0.0, 0.0, 0.0]
-}
-```
-
-Example (if `sendCounts` is `true`):
-```json
-{
-  "accelDataCounts": [0, 0, 0, 0]
-}
-```
-
-#### <a name="event-dropped-packet"></a> .on('droppedPacket', callback)
-
-Emitted when a packet (or packets) are dropped. Returns an array.
-
-#### <a name="event-error"></a> .on('error', callback)
-
-Emitted when there is an on the serial port.
-
-#### <a name="event-impedance"></a> .on('impedance', callback)
-
-Emitted when there is a new impedance available.
-
-Returns an object with properties:
-
-**_channelNumber_** {Number}
-
-The channel number: 1, 2, 3, 4 respectively and 0 for reference.
-
-**_impedanceValue_** {Number}
-
-The impedance in ohms.
-
-Example:
-```json
-{
-  "channelNumber": 0,
-  "impedanceValue": 0
-}
-```
-
-#### <a name="event-raw-data-packet"></a> .on('rawDataPacket', callback)
-
-Emitted when there is a new raw data packet available.
-
-#### <a name="event-ready"></a> .on('ready', callback)
-
-Emitted when the board is in a ready to start streaming state.
-
-#### <a name="event-sample"></a> .on('sample', callback)
-
-Emitted when there is a new sample available.
-
-Returns an object with properties:
-
-**_channelData_** {Array}
-
-Array of floats for each channel in volts..
-
-**NOTE:** Only present if `sendCounts` is `true`.
-
-**_channelDataCounts_** {Array}
-
-Array of integers for each channel in counts.
-
-**NOTE:** Only present if `sendCounts` is `false`.
-
-**_sampleNumber_** {Number}
-
-The sample number. Only goes up to 254.
-
-**_timeStamp_** {Number}
-
-The time the sample is packed up. Not accurate for ERP.
-
-Example (if `sendCounts` is `false`):
-```json
-{
-  "channelData": [0.0, 0.0, 0.0, 0.0],
-  "sampleNumber": 0,
-  "timeStamp": 0
-}
-```
-
-Example (if `sendCounts` is `true`):
-```json
-{
-  "channelDataCounts": [0, 0, 0, 0],
-  "sampleNumber": 0,
-  "timeStamp": 0
-}
-```
-
-#### <a name="event-scan-start"></a> .on('scanStart', callback)
-
-Emitted when a noble scan is started.
-
-#### <a name="event-scan-stop"></a> .on('scanStop', callback)
-
-Emitted when a noble scan is stopped.
-
-## <a name="interfacing-with-other-tools"></a> Interfacing With Other Tools:
-
-### <a name="interfacing-with-other-tools-labstreaminglayer"></a> LabStreamingLayer
-
-[LabStreamingLayer](https://github.com/sccn/labstreaminglayer) is a tool for streaming or recording time-series data. It can be used to interface with [Matlab](https://github.com/sccn/labstreaminglayer/tree/master/LSL/liblsl-Matlab), [Python](https://github.com/sccn/labstreaminglayer/tree/master/LSL/liblsl-Python), [Unity](https://github.com/xfleckx/LSL4Unity), and many other programs.
-
-To use LSL with the NodeJS SDK, go to our [labstreaminglayer example](https://github.com/OpenBCI/OpenBCI_NodeJS_Ganglion/tree/master/examples/labstreaminglayer), which contains code that is ready to start an LSL stream of OpenBCI data.
-
-Follow the directions in the [readme](https://github.com/OpenBCI/OpenBCI_NodeJS_Ganglion/blob/master/examples/labstreaminglayer/readme.md) to get started.
+| Name | Type | Description |
+| --- | --- | --- |
+| debug | <code>Boolean</code> | Print out a raw dump of bytes sent and received. (Default `false`) |
+| nobleAutoStart | <code>Boolean</code> | Automatically initialize `noble`. Subscribes to blue tooth state changes and such.           (Default `true`) |
+| nobleScanOnPowerOn | <code>Boolean</code> | Start scanning for CytonBLE BLE devices as soon as power turns on.           (Default `true`) |
+| sendCounts | <code>Boolean</code> | Send integer raw counts instead of scaled floats.           (Default `false`) |
+|  | <code>Boolean</code> | Print out useful debugging events. (Default `false`) |
 
 
 ## <a name="developing"></a> Developing:
@@ -612,3 +600,16 @@ npm test
 ## <a name="license"></a> License:
 
 MIT
+
+[link_aj_keller]: https://github.com/aj-ptw
+[link_shop_wifi_shield]: https://shop.openbci.com/collections/frontpage/products/wifi-shield?variant=44534009550
+[link_shop_ganglion]: https://shop.openbci.com/collections/frontpage/products/pre-order-ganglion-board
+[link_shop_cyton]: https://shop.openbci.com/collections/frontpage/products/cyton-biosensing-board-8-channel
+[link_shop_cyton_daisy]: https://shop.openbci.com/collections/frontpage/products/cyton-daisy-biosensing-boards-16-channel
+[link_ptw]: https://www.pushtheworldllc.com
+[link_neba]: https://nebahealth.com
+[link_openbci]: http://www.openbci.com
+[link_mozwow]: http://mozillascience.github.io/working-open-workshop/index.html
+[link_cyton_ble_server]: examples/cytonBLEServer/cytonBLEServer.js
+[link_openleaderscohort]: https://medium.com/@MozOpenLeaders
+[link_mozsci]: https://science.mozilla.org
