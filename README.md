@@ -1,7 +1,7 @@
 # OpenBCI Cyton BLE NodeJS SDK
 
 <p align="center">
-  <img alt="banner" src="/images/WiFi_front_product.jpg/" width="600">
+  <img alt="banner" src="/images/OBCI_32bit_top.jpg/" width="600">
 </p>
 <p align="center" href="">
   Prove the Cyton over BLE instead of Gazell stack
