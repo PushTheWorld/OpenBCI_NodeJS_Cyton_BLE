@@ -1,6 +1,6 @@
 # Roadmap
 
-## OpenBCI WiFi NodeJS
+## OpenBCI Cyton BLE NodeJS
 
 Make programming with OpenBCI reliable, easy, research grade and fun!
 
@@ -11,5 +11,4 @@ Make programming with OpenBCI reliable, easy, research grade and fun!
 
 ## Medium term
 
-- Browserify this module
-- Examples
+- Merge into `openbci`
