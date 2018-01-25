@@ -21,7 +21,7 @@ This document (the README file) is a hub to give you some information about the 
 * [How can you get involved?](#get-involved)
 * [Get in touch](#contact-us)
 * [Find out more](#find-out-more)
-* [Understand the jargon](#glossary)
+* [Uploading the firmware](#firmware)
 
 ## What are we doing?
 
@@ -84,6 +84,21 @@ And of course, you'll want to know our:
 ## Thank you
 
 Thank you so much (Danke schön! Merci beaucoup!) for visiting the project and we do hope that you'll join us on this amazing journey to make programming with OpenBCI fun and easy.
+
+## Firmware
+
+To set up Cyton to do BLE, keeping in mind the switch on the Cyton between PC and BLE does nothing, you must change the firmware.
+
+1. Upload [BoardWithBLE.ino](https://github.com/OpenBCI/OpenBCI_32bit_Library/blob/master/examples/BoardWithBLE/BoardWithBLE.ino) to the Cyton's Pic32 over the air [following this tutorial](http://docs.openbci.com/Hardware/05-Cyton_Board_Programming_Tutorial#cyton-board-programming-tutorial-firmware-versions-2xx-3xx-fall-2016-present)
+2. Upload [DefaultRadio.ino](https://github.com/PushTheWorld/OpenBCI_RFDuino_BLE/blob/neba-ble/examples/DefaultRadio/DefaultRadio.ino) to the Cyton's RFDuino through hardwire [following this tutorial](http://docs.openbci.com/Hardware/06-Cyton_Radios_Programming_Tutorial#cyton-radios-programming-tutorial-using-radio-firmware-version-2xx-fall-2016) where you use the [DefaultRadio.ino from OpenBCI_RFDuino_BLE](https://github.com/PushTheWorld/OpenBCI_RFDuino_BLE/blob/neba-ble/examples/DefaultRadio/DefaultRadio.ino). If you don't have an FTDI programmer and need to use the Dongle that shipped with your Cyton, then be sure to follow the part in the tutorial about uploading the pass through code to the Dongle.
+
+To undo an go back to the default firmware that ships with the Cyton
+
+1. Upload [RadioDevice32bit.ino](https://github.com/OpenBCI/OpenBCI_Radios/blob/master/examples/RadioDevice32bit/RadioDevice32bit.ino) to the Cyton's RFDuino through hardwire [following this tutorial](http://docs.openbci.com/Hardware/06-Cyton_Radios_Programming_Tutorial#cyton-radios-programming-tutorial-using-radio-firmware-version-2xx-fall-2016)
+2. If you were using your Dongle to help program the Cyton's RFDuino, then now is the time to upload [RadioHost32bit.ino](https://github.com/OpenBCI/OpenBCI_Radios/blob/master/examples/RadioHost32bit/RadioHost32bit.ino) to the Dongle.
+3. Upload [DefaultBoard.ino](https://github.com/OpenBCI/OpenBCI_32bit_Library/blob/master/examples/DefaultBoard/DefaultBoard.ino) to the Cyton's Pic32 over the air [following this tutorial](http://docs.openbci.com/Hardware/05-Cyton_Board_Programming_Tutorial#cyton-board-programming-tutorial-firmware-versions-2xx-3xx-fall-2016-present)
+
+Please [edit this document](https://github.com/PushTheWorld/OpenBCI_NodeJS_Cyton_BLE/edit/master/README.md) if you can improve it! 
 
 # Documentation
 
