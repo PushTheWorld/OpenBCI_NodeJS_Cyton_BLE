@@ -1,6 +1,6 @@
 {
   "name": "openbci-cyton-ble",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The Node.js SDK for the OpenBCI Cyton running BLE Biosensor Board.",
   "main": "index.js",
   "scripts": {
@@ -22,7 +22,7 @@
     "gaussian": "^1.0.0",
     "lodash": "^4.16.6",
     "mathjs": "^3.3.0",
-    "noble": "1.8.1",
+    "noble": "1.9.0",
     "openbci-utilities": "^0.2.2",
     "performance-now": "^0.2.0",
     "sntp": "^2.0.0",
