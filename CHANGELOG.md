@@ -1,3 +1,9 @@
+# v0.1.2
+
+### Bug Fixes
+ 
+* undefined `localName` on peripheral caused crash of this module.
+
 # v0.1.1
 
 Update noble to 1.9.0 for macOS high serira

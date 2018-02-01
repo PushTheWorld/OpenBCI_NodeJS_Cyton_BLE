@@ -883,15 +883,17 @@ CytonBLE.prototype._nobleInit = function () {
 CytonBLE.prototype._nobleOnDeviceDiscoveredCallback = function (peripheral) {
   if(this.options.verbose) console.log(peripheral.advertisement);
   this.peripheralArray.push(peripheral);
-  if (peripheral.advertisement.localName.match(/RFduino/)) {
-    if (this.options.verbose) console.log('Found rfduino!');
-    if (_.isUndefined(_.find(this.cytonBLEPeripheralArray,
-        (p) => {
-          return p.advertisement.localName === peripheral.advertisement.localName;
-        }))) {
-      this.cytonBLEPeripheralArray.push(peripheral);
+  if (peripheral.advertisement.localName) {
+    if (peripheral.advertisement.localName.match(/RFduino/)) {
+      if (this.options.verbose) console.log('Found rfduino!');
+      if (_.isUndefined(_.find(this.cytonBLEPeripheralArray,
+          (p) => {
+            return p.advertisement.localName === peripheral.advertisement.localName;
+          }))) {
+        this.cytonBLEPeripheralArray.push(peripheral);
+      }
+      this.emit(k.OBCIEmitterRFduino, peripheral);
     }
-    this.emit(k.OBCIEmitterRFduino, peripheral);
   }
 };
 
