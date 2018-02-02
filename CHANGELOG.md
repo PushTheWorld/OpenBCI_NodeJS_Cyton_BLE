@@ -1,3 +1,9 @@
+# v0.1.3
+
+### Bug Fixes
+ 
+* Add long UUIDs to noble connect - #4
+
 # v0.1.2
 
 ### Bug Fixes

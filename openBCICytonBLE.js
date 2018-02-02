@@ -761,6 +761,9 @@ CytonBLE.prototype._nobleDestroy = function () {
 };
 
 CytonBLE.prototype._nobleConnect = function (peripheral) {
+  const rfduinoUuidServiceLong = '00002220-0000-1000-8000-00805f9b34fb';
+  const rfduinoUuidReceiveLong = '00002221-0000-1000-8000-00805f9b34fb';
+  const rfduinoUuidSendLong = '00002222-0000-1000-8000-00805f9b34fb';
   return new Promise((resolve, reject) => {
     if (this.isConnected()) return reject('already connected!');
 
@@ -787,7 +790,7 @@ CytonBLE.prototype._nobleConnect = function (peripheral) {
     this._peripheral.on(k.OBCINobleEmitterPeripheralServicesDiscover, (services) => {
 
       for (let i = 0; i < services.length; i++) {
-        if (services[i].uuid === k.RFduinoUuidService) {
+        if (services[i].uuid === k.RFduinoUuidService || services[i].uuid === rfduinoUuidServiceLong) {
           this._rfduinoService = services[i];
           // if (this.options.verbose) console.log("Found rfduino Service");
           break;
@@ -802,11 +805,11 @@ CytonBLE.prototype._nobleConnect = function (peripheral) {
         if (this.options.verbose) console.log('Discovered ' + characteristics.length + ' service characteristics');
         for (let i = 0; i < characteristics.length; i++) {
           // console.log(characteristics[i].uuid);
-          if (characteristics[i].uuid === k.RFduinoUuidReceive) {
+          if (characteristics[i].uuid === k.RFduinoUuidReceive || characteristics[i].uuid === rfduinoUuidReceiveLong) {
             if (this.options.verbose) console.log("Found receiveCharacteristicUUID");
             this._receiveCharacteristic = characteristics[i];
           }
-          if (characteristics[i].uuid === k.RFduinoUuidSend) {
+          if (characteristics[i].uuid === k.RFduinoUuidSend || characteristics[i].uuid === rfduinoUuidSendLong) {
             if (this.options.verbose) console.log("Found sendCharacteristicUUID");
             this._sendCharacteristic = characteristics[i];
           }
